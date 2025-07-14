@@ -1,0 +1,224 @@
+/**
+ * 🚀 Developer Reference: /BLUEPRINT.md → Public Profile Features
+ * Purpose: Enhanced animations for payment methods component
+ * Features: Fade in animations, hover effects, premium feel
+ */
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+/* Staggered animation delays for grid items */
+.payment-grid-item:nth-child(1) { animation-delay: 0ms; }
+.payment-grid-item:nth-child(2) { animation-delay: 100ms; }
+.payment-grid-item:nth-child(3) { animation-delay: 200ms; }
+.payment-grid-item:nth-child(4) { animation-delay: 300ms; }
+.payment-grid-item:nth-child(5) { animation-delay: 400ms; }
+
+.payment-method-item:nth-child(1) { animation-delay: 0ms; }
+.payment-method-item:nth-child(2) { animation-delay: 150ms; }
+.payment-method-item:nth-child(3) { animation-delay: 300ms; }
+.payment-method-item:nth-child(4) { animation-delay: 450ms; }
+
+/* Goal item animations */
+.goal-item:nth-child(1) { animation-delay: 0ms; }
+.goal-item:nth-child(2) { animation-delay: 150ms; }
+.goal-item:nth-child(3) { animation-delay: 300ms; }
+.goal-item:nth-child(4) { animation-delay: 450ms; }
+.goal-item:nth-child(5) { animation-delay: 600ms; }
+
+/* Social link animations */
+.social-link-item:nth-child(1) { animation-delay: 0ms; }
+.social-link-item:nth-child(2) { animation-delay: 100ms; }
+.social-link-item:nth-child(3) { animation-delay: 200ms; }
+.social-link-item:nth-child(4) { animation-delay: 300ms; }
+.social-link-item:nth-child(5) { animation-delay: 400ms; }
+.social-link-item:nth-child(6) { animation-delay: 500ms; }
+
+/* Tip item animations */
+.tip-item:nth-child(1) { animation-delay: 0ms; }
+.tip-item:nth-child(2) { animation-delay: 100ms; }
+.tip-item:nth-child(3) { animation-delay: 200ms; }
+.tip-item:nth-child(4) { animation-delay: 300ms; }
+.tip-item:nth-child(5) { animation-delay: 400ms; }
+
+/* Share action animations */
+.share-action-1 { animation-delay: 100ms; }
+.share-action-2 { animation-delay: 200ms; }
+.share-action-3 { animation-delay: 300ms; }
+
+/* Enhanced glassmorphism effects */
+.glass-enhanced {
+  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.glass-enhanced:hover {
+  background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.05) 100%);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* Premium shine effect */
+.shine-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.shine-effect::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transform: skewX(-25deg);
+  transition: left 0.6s ease;
+}
+
+.shine-effect:hover::before {
+  left: 100%;
+}
+
+/* Progress bar dynamic width */
+.progress-bar[data-progress] {
+  width: calc(var(--progress, 0) * 1%);
+}
+
+/* Goal achievement states */
+.goal-achieved {
+  border-color: rgba(34, 197, 94, 0.3);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 100%);
+}
+
+/* Story active states - theme-specific classes for your 4 themes */
+/* DriplyPay theme (purple gradient) */
+.theme-driply .story-active {
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+  border-color: rgba(147, 51, 234, 0.4);
+}
+
+.theme-driply .story-active:hover {
+  box-shadow: 0 0 30px rgba(147, 51, 234, 0.4);
+  border-color: rgba(147, 51, 234, 0.6);
+}
+
+/* Ocean theme (blue gradient) */
+.theme-ocean .story-active {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.4);
+}
+
+.theme-ocean .story-active:hover {
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.4);
+  border-color: rgba(59, 130, 246, 0.6);
+}
+
+/* Neon theme (green gradient) */
+.theme-neon .story-active {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+.theme-neon .story-active:hover {
+  box-shadow: 0 0 30px rgba(34, 197, 94, 0.4);
+  border-color: rgba(34, 197, 94, 0.6);
+}
+
+/* Luxe theme (black and gray gradient) - matches current connect section appearance */
+.theme-luxe .story-active {
+  box-shadow: 0 0 20px rgba(31, 41, 55, 0.3);
+  border-color: rgba(55, 65, 81, 0.4);
+}
+
+.theme-luxe .story-active:hover {
+  box-shadow: 0 0 30px rgba(31, 41, 55, 0.4);
+  border-color: rgba(55, 65, 81, 0.6);
+}
+
+/* Story indicator backgrounds by theme */
+/* DriplyPay theme (purple gradient) */
+.theme-driply .story-indicator {
+  background: linear-gradient(135deg, #9333ea, #a855f7);
+}
+
+/* Ocean theme (blue gradient) */
+.theme-ocean .story-indicator {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+}
+
+/* Neon theme (green gradient) */
+.theme-neon .story-indicator {
+  background: linear-gradient(135deg, #22c55e, #4ade80);
+}
+
+/* Luxe theme (black and gray gradient) - matches current connect section appearance */
+.theme-luxe .story-indicator {
+  background: linear-gradient(135deg, #1f2937, #374151);
+}
+
+/* Story overlay backgrounds by theme */
+/* DriplyPay theme (purple gradient) */
+.theme-driply .story-overlay {
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.1), rgba(147, 51, 234, 0.05));
+}
+
+/* Ocean theme (blue gradient) */
+.theme-ocean .story-overlay {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(59, 130, 246, 0.05));
+}
+
+/* Neon theme (green gradient) */
+.theme-neon .story-overlay {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+}
+
+/* Luxe theme (black and gray gradient) - matches current connect section appearance */
+.theme-luxe .story-overlay {
+  background: linear-gradient(135deg, rgba(31, 41, 55, 0.1), rgba(55, 65, 81, 0.05));
+}
+
+/* Editor story active styles - fixed DriplyPay branding with enhanced differentiation */
+.theme-driply .editor-story-active {
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.3), rgba(139, 92, 246, 0.2));
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.4);
+  border: 2px solid rgba(147, 51, 234, 0.6);
+  transform: scale(1.02);
+}
+
+.theme-driply .editor-story-active:hover {
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.4), rgba(139, 92, 246, 0.3));
+  box-shadow: 0 0 25px rgba(147, 51, 234, 0.5);
+  border: 2px solid rgba(147, 51, 234, 0.8);
+  transform: scale(1.05);
+}
+
+.theme-driply .editor-story-inactive {
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.1), rgba(139, 92, 246, 0.05));
+  box-shadow: 0 0 8px rgba(147, 51, 234, 0.15);
+  border: 1px solid rgba(147, 51, 234, 0.2);
+}
+
+.theme-driply .editor-story-inactive:hover {
+  background: linear-gradient(135deg, rgba(147, 51, 234, 0.15), rgba(139, 92, 246, 0.1));
+  box-shadow: 0 0 12px rgba(147, 51, 234, 0.2);
+  border: 1px solid rgba(147, 51, 234, 0.3);
+  transform: scale(1.02);
+}
+
+.theme-driply .editor-story-indicator {
+  background: linear-gradient(135deg, #9333ea, #8b5cf6);
+  box-shadow: 0 0 10px rgba(147, 51, 234, 0.5);
+}

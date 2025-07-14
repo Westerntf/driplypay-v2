@@ -1,0 +1,683 @@
+/**
+ * 🚀 Developer Reference: /BLUEPRINT.md → Social Stories Components
+ * Component: Social Stories Manager
+ * Features: Upload, manage, and display Instagram/Snapchat-style photo stories
+ */
+
+'use client'
+
+import { useState, useRef, useEffect, useCallback } from 'react'
+import Image from 'next/image'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Upload, X, Eye, Clock, DollarSign } from 'lucide-react'
+import { createClient } from '@/lib/supabase'
+import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/lib/auth'
+
+// Simple Switch component inline
+function Switch({ 
+  checked, 
+  onCheckedChange, 
+  id 
+}: { 
+  checked: boolean
+  onCheckedChange: (checked: boolean) => void
+  id?: string
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label="Toggle setting"
+      onClick={() => onCheckedChange(!checked)}
+      id={id}
+      className={`
+        inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent 
+        transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring 
+        focus-visible:ring-offset-2 focus-visible:ring-offset-background
+        ${checked ? 'bg-primary' : 'bg-input'}
+      `}
+    >
+      <div
+        className={`
+          pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform
+          ${checked ? 'translate-x-5' : 'translate-x-0'}
+        `}
+      />
+    </button>
+  )
+}
+
+interface SocialStory {
+  id: string
+  image_url: string
+  caption?: string
+  enable_payment_button: boolean
+  payment_cta_text: string
+  views_count: number
+  expires_at: string
+  created_at: string
+  social_links: {
+    platform: string
+    username: string
+    url: string
+  }
+  payment_methods?: {
+    type: string
+    name: string
+  }
+}
+
+interface FormData {
+  social_link_id: string
+  caption: string
+  enable_payment_button: boolean
+  payment_cta_text: string
+  linked_payment_method_id: string
+}
+
+interface SocialStoriesManagerProps {
+  socialLinks: Array<{
+    id: string
+    platform: string
+    username: string
+    url: string
+  }>
+  paymentMethods: Array<{
+    id: string
+    type: string
+    name: string
+  }>
+  userId: string
+  onStoriesUpdate?: () => void
+}
+
+// Create supabase client once outside component
+const supabase = createClient()
+
+export function SocialStoriesManager({ 
+  socialLinks, 
+  paymentMethods, 
+  userId, 
+  onStoriesUpdate 
+}: SocialStoriesManagerProps) {
+  const { user } = useAuth()
+  
+  const isDevelopmentMode = process.env.NODE_ENV === 'development' || (typeof window !== 'undefined' && window.location.hostname === 'localhost')
+  
+  console.log('🔍 SocialStoriesManager Debug - Props:', {
+    socialLinksCount: socialLinks?.length || 0,
+    paymentMethodsCount: paymentMethods?.length || 0,
+    userId,
+    userIdType: typeof userId,
+    userIdDefined: userId !== undefined,
+    currentUser: user?.id,
+    userEmail: user?.email,
+    isAuthenticated: !!user,
+    isDevelopment: isDevelopmentMode,
+    authStatus: user ? 'AUTHENTICATED' : 'NOT_AUTHENTICATED',
+    developmentBypass: isDevelopmentMode && !user ? 'ACTIVE' : 'INACTIVE',
+    effectiveUserId: userId || user?.id || 'dev-test-user',
+    socialLinks: socialLinks?.map(link => ({ id: link.id, platform: link.platform, username: link.username })),
+    paymentMethods: paymentMethods?.map(pm => ({ id: pm.id, type: pm.type, name: pm.name }))
+  })
+
+  const [stories, setStories] = useState<SocialStory[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+  const [showUploadForm, setShowUploadForm] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const { toast } = useToast()
+
+  // Form state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string>('')
+  const [formData, setFormData] = useState<FormData>({
+    social_link_id: '',
+    caption: '',
+    enable_payment_button: false,
+    payment_cta_text: 'Support Me',
+    linked_payment_method_id: ''
+  })
+
+  // Load stories
+  const loadStories = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch(`/api/social-stories?userId=${userId}`)
+      const data = await response.json()
+      
+      if (response.ok) {
+        setStories(data.stories || [])
+      } else {
+        toast({
+          title: "Error",
+          description: data.error || "Failed to load stories",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Error loading stories:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load stories",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [userId, toast])
+
+  // Load stories on component mount
+  useEffect(() => {
+    if (userId) {
+      loadStories()
+    }
+  }, [userId, loadStories])
+
+  // Handle file selection
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast({
+          title: "Error",
+          description: "File size must be less than 10MB",
+          variant: "destructive"
+        })
+        return
+      }
+
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Please select an image file",
+          variant: "destructive"
+        })
+        return
+      }
+
+      setSelectedFile(file)
+      setPreviewUrl(URL.createObjectURL(file))
+    }
+  }
+
+  // Upload image to Supabase Storage
+  const uploadImage = async (file: File): Promise<string> => {
+    const effectiveUserId = userId || user?.id || 'dev-test-user'  // Fallback for development
+    
+    // Sanitize filename by removing spaces and special characters
+    const sanitizedFileName = file.name
+      .replace(/[^a-zA-Z0-9.-]/g, '_') // Replace special chars with underscore
+      .replace(/_{2,}/g, '_') // Replace multiple underscores with single
+      .toLowerCase()
+    
+    const fileName = `${Date.now()}-${sanitizedFileName}`
+    const filePath = `${effectiveUserId}/social-stories/${fileName}`
+
+    console.log('🔍 Story Upload Debug - Starting upload:', { 
+      originalFileName: file.name,
+      sanitizedFileName,
+      finalFileName: fileName, 
+      filePath, 
+      fileSize: file.size, 
+      fileType: file.type,
+      originalUserId: userId,
+      effectiveUserId 
+    })
+
+    const { data, error } = await supabase.storage
+      .from('images')
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      })
+
+    if (error) {
+      console.error('🔍 Story Upload Debug - Upload error:', error)
+      throw new Error(`Upload failed: ${error.message}`)
+    }
+
+    console.log('🔍 Story Upload Debug - Upload success:', data)
+
+    const { data: urlData } = supabase.storage
+      .from('images')
+      .getPublicUrl(data.path)
+
+    console.log('🔍 Story Upload Debug - Public URL:', urlData.publicUrl)
+
+    return urlData.publicUrl
+  }
+
+  // Create story
+  const handleCreateStory = async () => {
+    if (!selectedFile || !formData.social_link_id) {
+      toast({
+        title: "Error",
+        description: "Please select an image and social link",
+        variant: "destructive"
+      })
+      return
+    }
+
+    if (!user && !isDevelopmentMode) {
+      toast({
+        title: "Error",
+        description: "You must be signed in to create stories",
+        variant: "destructive"
+      })
+      return
+    }
+
+    console.log('🔍 Story Creation Debug - Starting process:', {
+      fileName: selectedFile.name,
+      fileSize: selectedFile.size,
+      fileType: selectedFile.type,
+      formData,
+      currentUser: user?.id || 'DEVELOPMENT_MODE',
+      userEmail: user?.email || 'dev@example.com',
+      isDevelopment: process.env.NODE_ENV === 'development',
+      hasUser: !!user
+    })
+
+    setIsUploading(true)
+    try {
+      // Upload image
+      console.log('🔍 Story Creation Debug - Uploading image...')
+      const imageUrl = await uploadImage(selectedFile)
+      console.log('🔍 Story Creation Debug - Image uploaded:', imageUrl)
+
+      // Create story
+      console.log('🔍 Story Creation Debug - Creating story record...')
+      // More reliable development detection
+      const isDevelopmentMode = process.env.NODE_ENV === 'development' || window.location.hostname === 'localhost'
+      const effectiveUserId = userId || user?.id || 'dev-test-user'  // Fallback for development
+      
+      console.log('🔍 Story Creation Debug - Bypass Logic:', {
+        NODE_ENV: process.env.NODE_ENV,
+        hostname: window.location.hostname,
+        isDevelopmentMode,
+        hasUser: !!user,
+        effectiveUserId,
+        willAlwaysSendDevUserId: isDevelopmentMode
+      })
+      
+      const basePayload = {
+        ...formData,
+        image_url: imageUrl
+      }
+      
+      // Always send dev_user_id in development mode to ensure API can bypass auth
+      const storyPayload = isDevelopmentMode 
+        ? { ...basePayload, dev_user_id: effectiveUserId }
+        : basePayload
+      
+      console.log('🔍 Story Creation Debug - Final story payload:', storyPayload)
+
+      const response = await fetch('/api/social-stories', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(storyPayload)
+      })
+
+      console.log('🔍 Story Creation Debug - API response status:', response.status)
+      const data = await response.json()
+      console.log('🔍 Story Creation Debug - API response data:', data)
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Story created successfully!"
+        })
+        
+        // Reset form
+        setSelectedFile(null)
+        setPreviewUrl('')
+        setFormData({
+          social_link_id: '',
+          caption: '',
+          enable_payment_button: false,
+          payment_cta_text: 'Support Me',
+          linked_payment_method_id: ''
+        })
+        setShowUploadForm(false)
+        
+        // Reload stories
+        loadStories()
+        onStoriesUpdate?.()
+      } else {
+        console.error('🔍 Story Creation Debug - API error:', data)
+        toast({
+          title: "Error",
+          description: data.error || "Failed to create story",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('🔍 Story Creation Debug - Catch error:', error)
+      toast({
+        title: "Error",
+        description: "Failed to create story",
+        variant: "destructive"
+      })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  // Delete story
+  const handleDeleteStory = async (storyId: string) => {
+    try {
+      const response = await fetch(`/api/social-stories?id=${storyId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      })
+
+      if (response.ok) {
+        toast({
+          title: "Success",
+          description: "Story deleted successfully"
+        })
+        loadStories()
+        onStoriesUpdate?.()
+      } else {
+        const data = await response.json()
+        toast({
+          title: "Error",
+          description: data.error || "Failed to delete story",
+          variant: "destructive"
+        })
+      }
+    } catch (error) {
+      console.error('Error deleting story:', error)
+      toast({
+        title: "Error",
+        description: "Failed to delete story",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Format time remaining
+  const getTimeRemaining = (expiresAt: string) => {
+    const now = new Date()
+    const expires = new Date(expiresAt)
+    const diff = expires.getTime() - now.getTime()
+    
+    if (diff <= 0) return 'Expired'
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60))
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m remaining`
+    } else {
+      return `${minutes}m remaining`
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Social Stories</h3>
+          <p className="text-sm text-muted-foreground">
+            Create Instagram/Snapchat-style photo stories for your social links
+          </p>
+        </div>
+        <Button
+          onClick={() => {
+            setShowUploadForm(!showUploadForm)
+            if (stories.length === 0) loadStories()
+          }}
+          className="gap-2"
+        >
+          <Upload className="h-4 w-4" />
+          Add Story
+        </Button>
+      </div>
+
+      {/* Upload Form */}
+      {showUploadForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Create New Story
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Image Upload */}
+            <div>
+              <Label>Story Image</Label>
+              <div className="mt-2">
+                {previewUrl ? (
+                  <div className="relative w-32 h-56 rounded-lg overflow-hidden border">
+                    <Image
+                      src={previewUrl}
+                      alt="Story preview"
+                      fill
+                      className="object-cover"
+                    />
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="absolute top-2 right-2 h-6 w-6 p-0"
+                      onClick={() => {
+                        setSelectedFile(null)
+                        setPreviewUrl('')
+                      }}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div
+                    className="w-32 h-56 rounded-lg border-2 border-dashed border-muted-foreground/25 flex flex-col items-center justify-center cursor-pointer hover:border-muted-foreground/50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mt-2 text-center">
+                      Click to upload<br />9:16 ratio recommended
+                    </p>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  aria-label="Upload story image"
+                />
+              </div>
+            </div>
+
+            {/* Social Link Selection */}
+            <div>
+              <Label>Link to Social Platform</Label>
+              <Select
+                value={formData.social_link_id}
+                onValueChange={(value: string) => setFormData(prev => ({ ...prev, social_link_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select social link" />
+                </SelectTrigger>
+                <SelectContent>
+                  {socialLinks.map((link) => (
+                    <SelectItem key={link.id} value={link.id}>
+                      {link.platform} - @{link.username}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Caption */}
+            <div>
+              <Label>Caption (Optional)</Label>
+              <Textarea
+                placeholder="Add a caption to your story..."
+                value={formData.caption}
+                onChange={(e) => setFormData(prev => ({ ...prev, caption: e.target.value }))}
+                maxLength={500}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {formData.caption.length}/500 characters
+              </p>
+            </div>
+
+            {/* Payment Button */}
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="enable-payment"
+                  checked={formData.enable_payment_button}
+                  onCheckedChange={(checked: boolean) => 
+                    setFormData(prev => ({ ...prev, enable_payment_button: checked }))
+                  }
+                />
+                <Label htmlFor="enable-payment">Enable payment button</Label>
+              </div>
+
+              {formData.enable_payment_button && (
+                <div className="space-y-3 pl-6">
+                  <div>
+                    <Label>Button Text</Label>
+                    <Input
+                      value={formData.payment_cta_text}
+                      onChange={(e) => setFormData(prev => ({ ...prev, payment_cta_text: e.target.value }))}
+                      placeholder="Support Me"
+                      maxLength={50}
+                    />
+                  </div>
+                  <div>
+                    <Label>Payment Method</Label>
+                    <Select
+                      value={formData.linked_payment_method_id}
+                      onValueChange={(value: string) => setFormData(prev => ({ ...prev, linked_payment_method_id: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select payment method" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paymentMethods.map((method) => (
+                          <SelectItem key={method.id} value={method.id}>
+                            {method.type} - {method.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowUploadForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateStory}
+                disabled={isUploading || !selectedFile || !formData.social_link_id}
+              >
+                {isUploading ? 'Uploading...' : 'Create Story'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Stories List */}
+      {stories.length > 0 && (
+        <div className="space-y-4">
+          <h4 className="font-medium">Active Stories</h4>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {stories.map((story: SocialStory) => (
+              <Card key={story.id} className="overflow-hidden">
+                <div className="relative">
+                  <Image
+                    src={story.image_url}
+                    alt="Story"
+                    width={400}
+                    height={192}
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="absolute top-2 right-2 flex space-x-1">
+                    <div className="bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                      <Eye className="h-3 w-3" />
+                      {story.views_count}
+                    </div>
+                    {story.enable_payment_button && (
+                      <div className="bg-green-600 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                        <DollarSign className="h-3 w-3" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    {getTimeRemaining(story.expires_at)}
+                  </div>
+                </div>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">
+                        {story.social_links.platform}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        @{story.social_links.username}
+                      </p>
+                      {story.caption && (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {story.caption}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleDeleteStory(story.id)}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {stories.length === 0 && !showUploadForm && !isLoading && (
+        <Card>
+          <CardContent className="text-center py-8">
+            <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h4 className="text-lg font-medium mb-2">No Stories Yet</h4>
+            <p className="text-muted-foreground mb-4">
+              Create your first story to engage your audience with visual content
+            </p>
+            <Button onClick={() => setShowUploadForm(true)}>
+              Create Your First Story
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}

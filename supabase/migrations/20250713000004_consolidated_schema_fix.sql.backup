@@ -1,0 +1,528 @@
+-- CONSOLIDATED DRIPLYAY DATABASE SCHEMA
+-- Master Schema that consolidates all migrations and fixes
+-- This schema preserves existing data and adds missing features
+-- Version: July 13, 2025
+
+-- =============================================================================
+-- IMPORTANT: This schema is designed to work with existing data
+-- It only ADDS missing tables/columns, never DROPS or MODIFIES existing ones
+-- =============================================================================
+
+BEGIN;
+
+-- =============================================================================
+-- 1. UTILITY FUNCTIONS
+-- =============================================================================
+
+-- Create a helper function for checking if columns exist
+CREATE OR REPLACE FUNCTION column_exists(table_name TEXT, column_name TEXT) 
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = $1 AND column_name = $2
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a helper function for checking if tables exist
+CREATE OR REPLACE FUNCTION table_exists(table_name TEXT) 
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN EXISTS (
+        SELECT 1 FROM information_schema.tables 
+        WHERE table_name = $1 AND table_schema = 'public'
+    );
+END;
+$$ LANGUAGE plpgsql;
+
+-- =============================================================================
+-- 2. ADD MISSING COLUMNS TO EXISTING TABLES
+-- =============================================================================
+
+-- Add missing columns to profiles table
+DO $$ 
+BEGIN
+    -- Section visibility controls
+    IF NOT column_exists('profiles', 'show_social_links') THEN
+        ALTER TABLE profiles ADD COLUMN show_social_links BOOLEAN DEFAULT true;
+    END IF;
+    
+    IF NOT column_exists('profiles', 'show_payment_methods') THEN
+        ALTER TABLE profiles ADD COLUMN show_payment_methods BOOLEAN DEFAULT true;
+    END IF;
+    
+    IF NOT column_exists('profiles', 'show_goals') THEN
+        ALTER TABLE profiles ADD COLUMN show_goals BOOLEAN DEFAULT true;
+    END IF;
+    
+    IF NOT column_exists('profiles', 'show_qr_codes') THEN
+        ALTER TABLE profiles ADD COLUMN show_qr_codes BOOLEAN DEFAULT true;
+    END IF;
+    
+    -- Additional profile features
+    IF NOT column_exists('profiles', 'followers_count') THEN
+        ALTER TABLE profiles ADD COLUMN followers_count INTEGER DEFAULT 0;
+    END IF;
+    
+    IF NOT column_exists('profiles', 'total_earnings') THEN
+        ALTER TABLE profiles ADD COLUMN total_earnings INTEGER DEFAULT 0;
+    END IF;
+    
+    IF NOT column_exists('profiles', 'tip_amounts') THEN
+        ALTER TABLE profiles ADD COLUMN tip_amounts INTEGER[] DEFAULT ARRAY[500, 1000, 2500, 5000, 10000];
+    END IF;
+    
+    IF NOT column_exists('profiles', 'custom_tip_enabled') THEN
+        ALTER TABLE profiles ADD COLUMN custom_tip_enabled BOOLEAN DEFAULT true;
+    END IF;
+END $$;
+
+-- Add missing columns to social_links table
+DO $$ 
+BEGIN
+    IF NOT column_exists('social_links', 'username') THEN
+        ALTER TABLE social_links ADD COLUMN username TEXT;
+    END IF;
+    
+    IF NOT column_exists('social_links', 'order_index') THEN
+        ALTER TABLE social_links ADD COLUMN order_index INTEGER DEFAULT 0;
+    END IF;
+END $$;
+
+-- Add missing columns to payment_methods table  
+DO $$ 
+BEGIN
+    IF NOT column_exists('payment_methods', 'handle') THEN
+        ALTER TABLE payment_methods ADD COLUMN handle TEXT;
+    END IF;
+    
+    IF NOT column_exists('payment_methods', 'total_earnings') THEN
+        ALTER TABLE payment_methods ADD COLUMN total_earnings INTEGER DEFAULT 0;
+    END IF;
+    
+    IF NOT column_exists('payment_methods', 'total_clicks') THEN
+        ALTER TABLE payment_methods ADD COLUMN total_clicks INTEGER DEFAULT 0;
+    END IF;
+    
+    IF NOT column_exists('payment_methods', 'order_index') THEN
+        ALTER TABLE payment_methods ADD COLUMN order_index INTEGER DEFAULT 0;
+    END IF;
+    
+    IF NOT column_exists('payment_methods', 'enabled') THEN
+        ALTER TABLE payment_methods ADD COLUMN enabled BOOLEAN DEFAULT true;
+    END IF;
+    
+    -- Fix column name compatibility - add display_order if order_index doesn't exist
+    IF column_exists('payment_methods', 'order_index') AND NOT column_exists('payment_methods', 'display_order') THEN
+        ALTER TABLE payment_methods ADD COLUMN display_order INTEGER;
+        UPDATE payment_methods SET display_order = order_index WHERE display_order IS NULL;
+    END IF;
+END $$;
+
+-- Add missing columns to goals table
+DO $$ 
+BEGIN
+    IF NOT column_exists('goals', 'payment_method_id') THEN
+        ALTER TABLE goals ADD COLUMN payment_method_id UUID REFERENCES payment_methods(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
+-- Enhance qrcodes table to match API expectations
+DO $$ 
+BEGIN
+    -- Add missing QR code customization columns
+    IF NOT column_exists('qrcodes', 'name') THEN
+        ALTER TABLE qrcodes ADD COLUMN name TEXT DEFAULT 'QR Code';
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'url') THEN
+        ALTER TABLE qrcodes ADD COLUMN url TEXT;
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'data_content') THEN
+        ALTER TABLE qrcodes ADD COLUMN data_content TEXT;
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'description') THEN
+        ALTER TABLE qrcodes ADD COLUMN description TEXT;
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'qr_image_url') THEN
+        ALTER TABLE qrcodes ADD COLUMN qr_image_url TEXT;
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'style_preset') THEN
+        ALTER TABLE qrcodes ADD COLUMN style_preset VARCHAR(20) DEFAULT 'default';
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'foreground_color') THEN
+        ALTER TABLE qrcodes ADD COLUMN foreground_color VARCHAR(7) DEFAULT '#000000';
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'background_color') THEN
+        ALTER TABLE qrcodes ADD COLUMN background_color VARCHAR(7) DEFAULT '#FFFFFF';
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'logo_url') THEN
+        ALTER TABLE qrcodes ADD COLUMN logo_url TEXT;
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'corner_style') THEN
+        ALTER TABLE qrcodes ADD COLUMN corner_style VARCHAR(20) DEFAULT 'square';
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'include_payment_amount') THEN
+        ALTER TABLE qrcodes ADD COLUMN include_payment_amount BOOLEAN DEFAULT false;
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'payment_amount') THEN
+        ALTER TABLE qrcodes ADD COLUMN payment_amount INTEGER;
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'scan_count') THEN
+        ALTER TABLE qrcodes ADD COLUMN scan_count INTEGER DEFAULT 0;
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'last_scanned_at') THEN
+        ALTER TABLE qrcodes ADD COLUMN last_scanned_at TIMESTAMPTZ;
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'linked_social_link_id') THEN
+        ALTER TABLE qrcodes ADD COLUMN linked_social_link_id UUID REFERENCES social_links(id) ON DELETE SET NULL;
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'linked_payment_method_id') THEN
+        ALTER TABLE qrcodes ADD COLUMN linked_payment_method_id UUID REFERENCES payment_methods(id) ON DELETE SET NULL;
+    END IF;
+    
+    IF NOT column_exists('qrcodes', 'is_active') THEN
+        ALTER TABLE qrcodes ADD COLUMN is_active BOOLEAN DEFAULT true;
+    END IF;
+END $$;
+
+-- =============================================================================
+-- 3. CREATE MISSING TABLES
+-- =============================================================================
+
+-- Create social_stories table if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT table_exists('social_stories') THEN
+        CREATE TABLE social_stories (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+            social_link_id UUID REFERENCES social_links(id) ON DELETE CASCADE NOT NULL,
+            
+            -- Story Content
+            image_url TEXT NOT NULL,
+            caption TEXT,
+            
+            -- Payment Integration
+            enable_payment_button BOOLEAN DEFAULT false,
+            payment_cta_text TEXT DEFAULT 'Support Me',
+            linked_payment_method_id UUID REFERENCES payment_methods(id) ON DELETE SET NULL,
+            
+            -- Story Metadata
+            views_count INTEGER DEFAULT 0,
+            is_active BOOLEAN DEFAULT true,
+            expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '24 hours'),
+            
+            -- Timestamps
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            updated_at TIMESTAMPTZ DEFAULT NOW(),
+            
+            -- Constraints
+            CONSTRAINT check_caption_length CHECK (LENGTH(caption) <= 500),
+            CONSTRAINT check_cta_text_length CHECK (LENGTH(payment_cta_text) <= 50)
+        );
+        
+        -- Create indexes
+        CREATE INDEX social_stories_user_id_idx ON social_stories(user_id);
+        CREATE INDEX social_stories_social_link_id_idx ON social_stories(social_link_id);
+        CREATE INDEX social_stories_active_idx ON social_stories(user_id, is_active, expires_at);
+        CREATE INDEX social_stories_expires_at_idx ON social_stories(expires_at);
+    END IF;
+END $$;
+
+-- Create social_story_views table if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT table_exists('social_story_views') THEN
+        CREATE TABLE social_story_views (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            story_id UUID REFERENCES social_stories(id) ON DELETE CASCADE NOT NULL,
+            viewer_ip INET,
+            user_agent TEXT,
+            viewed_at TIMESTAMPTZ DEFAULT NOW()
+        );
+        
+        -- Create indexes
+        CREATE INDEX social_story_views_story_id_idx ON social_story_views(story_id);
+        CREATE INDEX social_story_views_viewed_at_idx ON social_story_views(viewed_at);
+    END IF;
+END $$;
+
+-- Create qr_code_scans table if it doesn't exist
+DO $$ 
+BEGIN
+    IF NOT table_exists('qr_code_scans') THEN
+        CREATE TABLE qr_code_scans (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            qr_code_id UUID REFERENCES qrcodes(id) ON DELETE CASCADE NOT NULL,
+            scanned_at TIMESTAMPTZ DEFAULT NOW(),
+            user_agent TEXT,
+            ip_address INET,
+            country VARCHAR(2),
+            city VARCHAR(100),
+            referrer TEXT
+        );
+        
+        -- Create indexes
+        CREATE INDEX qr_code_scans_qr_code_id_idx ON qr_code_scans(qr_code_id);
+        CREATE INDEX qr_code_scans_scanned_at_idx ON qr_code_scans(scanned_at);
+    END IF;
+END $$;
+
+-- =============================================================================
+-- 4. UPDATE CONSTRAINTS AND CHECKS
+-- =============================================================================
+
+-- Update qrcodes type constraint to match API expectations
+DO $$ 
+BEGIN
+    -- Drop existing constraint if it exists
+    ALTER TABLE qrcodes DROP CONSTRAINT IF EXISTS qrcodes_type_check;
+    
+    -- Add updated constraint
+    ALTER TABLE qrcodes ADD CONSTRAINT qrcodes_type_check 
+        CHECK (type IN ('profile', 'social', 'payment', 'payment_method', 'url', 'contact', 'text', 'goal', 'fixed_tip'));
+END $$;
+
+-- Add QR code style constraints
+DO $$ 
+BEGIN
+    ALTER TABLE qrcodes DROP CONSTRAINT IF EXISTS check_style_preset;
+    ALTER TABLE qrcodes ADD CONSTRAINT check_style_preset 
+        CHECK (style_preset IN ('default', 'dark', 'brand', 'neon', 'sunset'));
+        
+    ALTER TABLE qrcodes DROP CONSTRAINT IF EXISTS check_corner_style;
+    ALTER TABLE qrcodes ADD CONSTRAINT check_corner_style 
+        CHECK (corner_style IN ('square', 'rounded', 'dots', 'extra-rounded'));
+        
+    ALTER TABLE qrcodes DROP CONSTRAINT IF EXISTS check_foreground_color;
+    ALTER TABLE qrcodes ADD CONSTRAINT check_foreground_color 
+        CHECK (foreground_color ~ '^#[0-9A-Fa-f]{6}$');
+        
+    ALTER TABLE qrcodes DROP CONSTRAINT IF EXISTS check_background_color;
+    ALTER TABLE qrcodes ADD CONSTRAINT check_background_color 
+        CHECK (background_color ~ '^#[0-9A-Fa-f]{6}$');
+END $$;
+
+-- =============================================================================
+-- 5. CREATE/UPDATE INDEXES
+-- =============================================================================
+
+-- Add missing indexes for performance
+CREATE INDEX IF NOT EXISTS qrcodes_data_content_idx ON qrcodes(data_content);
+CREATE INDEX IF NOT EXISTS qrcodes_style_preset_idx ON qrcodes(style_preset);
+CREATE INDEX IF NOT EXISTS qrcodes_linked_social_link_idx ON qrcodes(linked_social_link_id);
+CREATE INDEX IF NOT EXISTS qrcodes_linked_payment_idx ON qrcodes(linked_payment_method_id);
+CREATE INDEX IF NOT EXISTS qrcodes_active_idx ON qrcodes(user_id, is_active);
+
+-- =============================================================================
+-- 6. CREATE/UPDATE FUNCTIONS AND TRIGGERS
+-- =============================================================================
+
+-- Function to update scan count when QR code is scanned
+CREATE OR REPLACE FUNCTION update_qr_scan_count()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF TG_OP = 'INSERT' THEN
+        UPDATE qrcodes 
+        SET 
+            scan_count = COALESCE(scan_count, 0) + 1,
+            last_scanned_at = NEW.scanned_at
+        WHERE id = NEW.qr_code_id;
+        RETURN NEW;
+    END IF;
+    RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create trigger for QR scan counting
+DROP TRIGGER IF EXISTS trigger_update_qr_scan_count ON qr_code_scans;
+CREATE TRIGGER trigger_update_qr_scan_count
+    AFTER INSERT ON qr_code_scans
+    FOR EACH ROW
+    EXECUTE FUNCTION update_qr_scan_count();
+
+-- Function to increment story views
+CREATE OR REPLACE FUNCTION increment_story_views(story_uuid UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE social_stories 
+    SET views_count = COALESCE(views_count, 0) + 1
+    WHERE id = story_uuid;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Update timestamp triggers
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Apply updated_at triggers to tables that need them
+DROP TRIGGER IF EXISTS update_social_stories_updated_at ON social_stories;
+CREATE TRIGGER update_social_stories_updated_at
+    BEFORE UPDATE ON social_stories
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- =============================================================================
+-- 7. ROW LEVEL SECURITY POLICIES
+-- =============================================================================
+
+-- Enable RLS on new tables
+ALTER TABLE social_stories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE social_story_views ENABLE ROW LEVEL SECURITY;
+ALTER TABLE qr_code_scans ENABLE ROW LEVEL SECURITY;
+
+-- Social Stories policies
+DROP POLICY IF EXISTS "Users can manage their own stories" ON social_stories;
+CREATE POLICY "Users can manage their own stories" ON social_stories
+    FOR ALL USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Active stories are publicly readable" ON social_stories;
+CREATE POLICY "Active stories are publicly readable" ON social_stories
+    FOR SELECT USING (
+        is_active AND expires_at > NOW() AND 
+        EXISTS (
+            SELECT 1 FROM profiles 
+            WHERE profiles.user_id = social_stories.user_id 
+            AND NOT profiles.private_profile
+        )
+    );
+
+-- Story Views policies
+DROP POLICY IF EXISTS "Users can view own story analytics" ON social_story_views;
+CREATE POLICY "Users can view own story analytics" ON social_story_views
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM social_stories 
+            WHERE social_stories.id = social_story_views.story_id 
+            AND social_stories.user_id = auth.uid()
+        )
+    );
+
+DROP POLICY IF EXISTS "Anyone can create story views" ON social_story_views;
+CREATE POLICY "Anyone can create story views" ON social_story_views
+    FOR INSERT WITH CHECK (true);
+
+-- QR Code Scans policies
+DROP POLICY IF EXISTS "Anyone can create QR scan records" ON qr_code_scans;
+CREATE POLICY "Anyone can create QR scan records" ON qr_code_scans
+    FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users can view own QR code scans" ON qr_code_scans;
+CREATE POLICY "Users can view own QR code scans" ON qr_code_scans
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM qrcodes 
+            WHERE qrcodes.id = qr_code_scans.qr_code_id 
+            AND qrcodes.user_id = auth.uid()
+        )
+    );
+
+-- Enhanced QR Codes policies
+DROP POLICY IF EXISTS "Users can view own QR codes" ON qrcodes;
+CREATE POLICY "Users can view own QR codes" ON qrcodes
+    FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can insert own QR codes" ON qrcodes;
+CREATE POLICY "Users can insert own QR codes" ON qrcodes
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can update own QR codes" ON qrcodes;
+CREATE POLICY "Users can update own QR codes" ON qrcodes
+    FOR UPDATE USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users can delete own QR codes" ON qrcodes;
+CREATE POLICY "Users can delete own QR codes" ON qrcodes
+    FOR DELETE USING (auth.uid() = user_id);
+
+-- =============================================================================
+-- 8. DATA MIGRATION AND CLEANUP
+-- =============================================================================
+
+-- Update existing qrcodes data to populate new columns with defaults
+UPDATE qrcodes SET 
+    scan_count = COALESCE(scans, 0),
+    qr_image_url = COALESCE(qr_image_url, url),
+    data_content = COALESCE(data_content, url),
+    name = COALESCE(name, 'QR Code')
+WHERE scan_count IS NULL OR qr_image_url IS NULL OR data_content IS NULL OR name IS NULL;
+
+-- Update existing profiles to show all sections by default
+UPDATE profiles SET 
+    show_social_links = COALESCE(show_social_links, true),
+    show_payment_methods = COALESCE(show_payment_methods, true),
+    show_goals = COALESCE(show_goals, true),
+    show_qr_codes = COALESCE(show_qr_codes, true)
+WHERE show_social_links IS NULL 
+    OR show_payment_methods IS NULL 
+    OR show_goals IS NULL 
+    OR show_qr_codes IS NULL;
+
+-- =============================================================================
+-- 9. DOCUMENTATION AND COMMENTS
+-- =============================================================================
+
+-- Add table comments
+COMMENT ON TABLE social_stories IS 'Instagram/Snapchat-style photo stories for social links';
+COMMENT ON TABLE social_story_views IS 'Tracks views and engagement for social stories';
+COMMENT ON TABLE qr_code_scans IS 'Tracks QR code scans for analytics';
+
+-- Add column comments for QR codes
+COMMENT ON COLUMN qrcodes.data_content IS 'The actual content/URL that the QR code encodes';
+COMMENT ON COLUMN qrcodes.qr_image_url IS 'Generated QR code image as data URL or file URL';
+COMMENT ON COLUMN qrcodes.style_preset IS 'Predefined style: default, dark, brand, neon, sunset';
+COMMENT ON COLUMN qrcodes.corner_style IS 'QR code corner style: square, rounded, dots, extra-rounded';
+COMMENT ON COLUMN qrcodes.scan_count IS 'Total number of times this QR code has been scanned';
+COMMENT ON COLUMN qrcodes.include_payment_amount IS 'Whether to include a preset payment amount';
+COMMENT ON COLUMN qrcodes.payment_amount IS 'Preset payment amount in cents for payment QR codes';
+
+-- Cleanup helper functions
+DROP FUNCTION IF EXISTS column_exists(TEXT, TEXT);
+DROP FUNCTION IF EXISTS table_exists(TEXT);
+
+COMMIT;
+
+-- =============================================================================
+-- VERIFICATION QUERIES
+-- =============================================================================
+
+-- These queries can be run after migration to verify everything is working:
+
+-- 1. Check all tables exist
+-- SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;
+
+-- 2. Check QR codes table has all required columns
+-- SELECT column_name, data_type, is_nullable, column_default 
+-- FROM information_schema.columns 
+-- WHERE table_name = 'qrcodes' 
+-- ORDER BY ordinal_position;
+
+-- 3. Check social stories system is ready
+-- SELECT COUNT(*) as story_count FROM social_stories;
+-- SELECT COUNT(*) as view_count FROM social_story_views;
+
+-- 4. Verify RLS policies are active
+-- SELECT schemaname, tablename, policyname, permissive, cmd, qual
+-- FROM pg_policies 
+-- WHERE schemaname = 'public'
+-- ORDER BY tablename, policyname;

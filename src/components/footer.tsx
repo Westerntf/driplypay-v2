@@ -56,8 +56,10 @@ export const Footer = () => {
           {/* Brand Column */}
           <div className="lg:col-span-1">
             <Link href="/" className="inline-block mb-6">
-              <div className="text-2xl font-black tracking-tight">
-                <GradientText>DRIPLYPAY</GradientText>
+              <div className="inline-block px-4 py-2 bg-gradient-to-r from-gray-950 to-gray-900 rounded-full text-white border border-gray-700/50 shadow-lg hover:from-gray-900 hover:to-gray-800 transition-all duration-300">
+                <span className="text-lg font-black tracking-tight">
+                  DriplyPay
+                </span>
               </div>
             </Link>
             <p className="text-gray-400 text-sm mb-6 max-w-xs">

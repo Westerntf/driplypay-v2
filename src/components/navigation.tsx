@@ -7,6 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { Menu, X, User, CreditCard, QrCode, BarChart3, Settings, LogOut, ChevronDown, Edit, ExternalLink } from 'lucide-react'
 import { useAuth } from '@/lib/auth'
@@ -86,18 +87,20 @@ export const Navigation = () => {
   }
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass-primary border-b border-gray-800">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-xl border-b border-gray-700/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="text-2xl font-black tracking-tight">
-              <GradientText>DRIPLYPAY</GradientText>
+          <Link href="/" className="flex items-center">
+            <div className="inline-block px-6 py-2 bg-gradient-to-r from-gray-950 to-gray-900 rounded-full text-white border border-gray-700/50 shadow-xl hover:from-gray-900 hover:to-gray-800 transition-all duration-300">
+              <span className="text-xl md:text-2xl font-black tracking-tight">
+                DriplyPay
+              </span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-4">
             {user ? (
               // Authenticated navigation
               <>
@@ -105,20 +108,22 @@ export const Navigation = () => {
                 <div className="relative" ref={dashboardDropdownRef}>
                   <button
                     onClick={() => setDashboardDropdownOpen(!dashboardDropdownOpen)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`inline-block px-5 py-2.5 bg-gradient-to-r from-gray-950 to-gray-900 rounded-full text-white border border-gray-700/50 shadow-lg hover:from-gray-900 hover:to-gray-800 transition-all duration-300 min-w-[120px] ${
                       isActive('/dashboard') || isActive('/dashboard/analytics')
-                        ? 'text-white bg-gray-800'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                        ? 'shadow-xl border-gray-600/50'
+                        : ''
                     }`}
                   >
-                    <BarChart3 className="w-4 h-4" />
-                    <span>Dashboard</span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${dashboardDropdownOpen ? 'rotate-180' : ''}`} />
+                    <div className="flex items-center justify-center space-x-2">
+                      <BarChart3 className="w-4 h-4" />
+                      <span className="text-sm font-semibold">Dashboard</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${dashboardDropdownOpen ? 'rotate-180' : ''}`} />
+                    </div>
                   </button>
 
                   {/* Dashboard Dropdown Menu */}
                   {dashboardDropdownOpen && (
-                    <div className="absolute top-full left-0 mt-1 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50">
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-black/90 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl z-50">
                       <div className="py-2">
                         <Link
                           href="/dashboard"
@@ -145,20 +150,22 @@ export const Navigation = () => {
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`inline-block px-5 py-2.5 bg-gradient-to-r from-gray-950 to-gray-900 rounded-full text-white border border-gray-700/50 shadow-lg hover:from-gray-900 hover:to-gray-800 transition-all duration-300 min-w-[120px] ${
                       isActive('/dashboard/profile') || isActive('/profile-editor') || (profile?.username && pathname.startsWith(`/${profile.username}`))
-                        ? 'text-white bg-gray-800'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                        ? 'shadow-xl border-gray-600/50'
+                        : ''
                     }`}
                   >
-                    <User className="w-4 h-4" />
-                    <span>Profile</span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} />
+                    <div className="flex items-center justify-center space-x-2">
+                      <User className="w-4 h-4" />
+                      <span className="text-sm font-semibold">Profile</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} />
+                    </div>
                   </button>
 
                   {/* Dropdown Menu */}
                   {profileDropdownOpen && (
-                    <div className="absolute top-full left-0 mt-1 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50">
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-black/90 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl z-50">
                       <div className="py-2">
                         <Link
                           href="/profile-editor"
@@ -187,20 +194,22 @@ export const Navigation = () => {
                 <div className="relative" ref={paymentSettingsDropdownRef}>
                   <button
                     onClick={() => setPaymentSettingsDropdownOpen(!paymentSettingsDropdownOpen)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`inline-block px-5 py-2.5 bg-gradient-to-r from-gray-950 to-gray-900 rounded-full text-white border border-gray-700/50 shadow-lg hover:from-gray-900 hover:to-gray-800 transition-all duration-300 min-w-[160px] ${
                       isActive('/dashboard/payments') || isActive('/dashboard/qr')
-                        ? 'text-white bg-gray-800'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                        ? 'shadow-xl border-gray-600/50'
+                        : ''
                     }`}
                   >
-                    <CreditCard className="w-4 h-4" />
-                    <span>Payment Settings</span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${paymentSettingsDropdownOpen ? 'rotate-180' : ''}`} />
+                    <div className="flex items-center justify-center space-x-2">
+                      <CreditCard className="w-4 h-4" />
+                      <span className="text-sm font-semibold">Payment Settings</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${paymentSettingsDropdownOpen ? 'rotate-180' : ''}`} />
+                    </div>
                   </button>
 
                   {/* Payment Settings Dropdown Menu */}
                   {paymentSettingsDropdownOpen && (
-                    <div className="absolute top-full left-0 mt-1 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50">
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-black/90 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl z-50">
                       <div className="py-2">
                         <Link
                           href="/dashboard/payments"
@@ -227,20 +236,22 @@ export const Navigation = () => {
                 <div className="relative" ref={settingsDropdownRef}>
                   <button
                     onClick={() => setSettingsDropdownOpen(!settingsDropdownOpen)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`inline-block px-5 py-2.5 bg-gradient-to-r from-gray-950 to-gray-900 rounded-full text-white border border-gray-700/50 shadow-lg hover:from-gray-900 hover:to-gray-800 transition-all duration-300 min-w-[120px] ${
                       isActive('/dashboard/settings')
-                        ? 'text-white bg-gray-800'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                        ? 'shadow-xl border-gray-600/50'
+                        : ''
                     }`}
                   >
-                    <Settings className="w-4 h-4" />
-                    <span>Settings</span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${settingsDropdownOpen ? 'rotate-180' : ''}`} />
+                    <div className="flex items-center justify-center space-x-2">
+                      <Settings className="w-4 h-4" />
+                      <span className="text-sm font-semibold">Settings</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform ${settingsDropdownOpen ? 'rotate-180' : ''}`} />
+                    </div>
                   </button>
 
                   {/* Settings Dropdown Menu */}
                   {settingsDropdownOpen && (
-                    <div className="absolute top-full left-0 mt-1 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-lg z-50">
+                    <div className="absolute top-full left-0 mt-1 w-48 bg-black/90 backdrop-blur-xl border border-gray-700/50 rounded-xl shadow-2xl z-50">
                       <div className="py-2">
                         <Link
                           href="/dashboard/settings"
@@ -261,9 +272,11 @@ export const Navigation = () => {
                     <div className="flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-800/50">
                       <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-700">
                         {profile.avatar_url ? (
-                          <img 
+                          <Image 
                             src={profile.avatar_url} 
                             alt={profile.display_name || profile.username} 
+                            width={32}
+                            height={32}
                             className="w-full h-full object-cover"
                           />
                         ) : (
@@ -279,10 +292,12 @@ export const Navigation = () => {
                   )}
                   <button
                     onClick={handleSignOut}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-gray-800 transition-colors"
+                    className="inline-block px-5 py-2.5 bg-gradient-to-r from-gray-950 to-gray-900 rounded-full text-white border border-gray-700/50 shadow-lg hover:from-gray-900 hover:to-gray-800 transition-all duration-300 min-w-[120px]"
                   >
-                    <LogOut className="w-4 h-4" />
-                    <span>Sign Out</span>
+                    <div className="flex items-center justify-center space-x-2">
+                      <LogOut className="w-4 h-4" />
+                      <span className="text-sm font-semibold">Sign Out</span>
+                    </div>
                   </button>
                 </div>
               </>
@@ -293,20 +308,20 @@ export const Navigation = () => {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`inline-block px-5 py-2.5 bg-gradient-to-r from-gray-950 to-gray-900 rounded-full text-white border border-gray-700/50 shadow-lg hover:from-gray-900 hover:to-gray-800 transition-all duration-300 min-w-[100px] text-center ${
                       isActive(item.href)
-                        ? 'text-white bg-gray-800'
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                        ? 'shadow-xl border-gray-600/50'
+                        : ''
                     }`}
                   >
-                    {item.label}
+                    <span className="text-sm font-semibold">{item.label}</span>
                   </Link>
                 ))}
                 <Link
                   href="/signup"
-                  className="btn-primary px-6 py-2 text-sm"
+                  className="inline-block px-8 py-3 bg-gradient-to-r from-gray-950 to-gray-900 rounded-full text-white border border-gray-700/50 shadow-xl hover:from-gray-900 hover:to-gray-800 transition-all duration-300 transform hover:scale-105 min-w-[140px] text-center"
                 >
-                  Get Started
+                  <span className="text-base font-bold">Get Started</span>
                 </Link>
               </>
             )}
@@ -476,9 +491,11 @@ export const Navigation = () => {
                       <div className="flex items-center space-x-3 px-4 py-3 mb-3 rounded-lg bg-gray-800/50">
                         <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-700">
                           {profile.avatar_url ? (
-                            <img 
+                            <Image 
                               src={profile.avatar_url} 
                               alt={profile.display_name || profile.username} 
+                              width={40}
+                              height={40}
                               className="w-full h-full object-cover"
                             />
                           ) : (

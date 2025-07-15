@@ -180,7 +180,7 @@ export interface Database {
           id: string
           user_id: string
           event_type: 'profile_view' | 'payment_click' | 'qr_scan' | 'tip_received'
-          payment_method_id: string | null
+          wallet_method_id: string | null
           qr_code_id: string | null
           amount: number | null
           metadata: Json | null
@@ -190,7 +190,7 @@ export interface Database {
           id?: string
           user_id: string
           event_type: 'profile_view' | 'payment_click' | 'qr_scan' | 'tip_received'
-          payment_method_id?: string | null
+          wallet_method_id?: string | null
           qr_code_id?: string | null
           amount?: number | null
           metadata?: Json | null
@@ -200,7 +200,7 @@ export interface Database {
           id?: string
           user_id?: string
           event_type?: 'profile_view' | 'payment_click' | 'qr_scan' | 'tip_received'
-          payment_method_id?: string | null
+          wallet_method_id?: string | null
           qr_code_id?: string | null
           amount?: number | null
           metadata?: Json | null

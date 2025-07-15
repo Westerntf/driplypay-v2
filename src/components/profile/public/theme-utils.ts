@@ -6,50 +6,50 @@
 
 export function getThemeStyles(theme: string) {
   switch (theme) {
-    case 'theme1': // Ocean Theme - Light to Dark Blue
+    case 'theme1': // Ocean Theme - Dark Blue to Light Blue
       return {
         // Background always stays black for all themes
         background: 'bg-black',
-        // Ocean gradient - light blue to dark blue
-        accent: 'from-sky-300 via-blue-500 to-blue-800',
-        accentBackground: 'bg-gradient-to-r from-sky-300 via-blue-500 to-blue-800',
+        // Ocean gradient - dark blue (almost black) to light blue (deep ocean to surface)
+        accent: 'from-blue-950 via-blue-700 to-blue-300',
+        accentBackground: 'bg-gradient-to-r from-blue-950 via-blue-700 to-blue-300',
         // Glass-morphism cards with ocean blue accent
         card: 'bg-black/40 backdrop-blur-sm border-blue-400/20 hover:border-blue-400/40',
         // Ocean gradient buttons with hover effects
-        button: 'bg-gradient-to-r from-sky-300 via-blue-500 to-blue-800 hover:from-sky-200 hover:via-blue-400 hover:to-blue-700 shadow-lg shadow-blue-500/30',
+        button: 'bg-gradient-to-r from-blue-950 via-blue-700 to-blue-300 hover:from-blue-900 hover:via-blue-600 hover:to-blue-200 shadow-lg shadow-blue-500/30',
         // Icon backgrounds with ocean gradient
-        iconBackground: 'bg-gradient-to-r from-sky-300 via-blue-500 to-blue-800',
+        iconBackground: 'bg-gradient-to-r from-blue-950 via-blue-700 to-blue-300',
         // Text colors
         text: 'text-white',
-        accent_text: 'text-sky-300'
+        accent_text: 'text-blue-300'
       }
-    case 'theme2': // Neon Theme - Mint to Dark Green
+    case 'theme2': // Neon Theme - Dark Pink to Light Purple
       return {
         background: 'bg-black',
-        // Mint to dark green gradient (using teal/emerald colors)
-        accent: 'from-teal-300 via-emerald-500 to-green-800',
-        accentBackground: 'bg-gradient-to-r from-teal-300 via-emerald-500 to-green-800',
-        // Neon mint glass cards
-        card: 'bg-black/40 backdrop-blur-sm border-emerald-400/20 hover:border-emerald-400/40',
-        // Neon mint glow buttons with stronger shadows
-        button: 'bg-gradient-to-r from-teal-300 via-emerald-500 to-green-800 hover:from-teal-200 hover:via-emerald-400 hover:to-green-700 shadow-lg shadow-emerald-500/30',
-        iconBackground: 'bg-gradient-to-r from-teal-300 via-emerald-500 to-green-800',
+        // Dark pink to light purple gradient - vibrant neon aesthetic
+        accent: 'from-pink-900 via-purple-600 to-purple-400',
+        accentBackground: 'bg-gradient-to-r from-pink-900 via-purple-600 to-purple-400',
+        // Neon purple glass cards with glow effect
+        card: 'bg-black/40 backdrop-blur-sm border-purple-500/20 hover:border-purple-500/40',
+        // Neon purple gradient buttons with strong glow shadows
+        button: 'bg-gradient-to-r from-pink-900 via-purple-600 to-purple-400 hover:from-pink-800 hover:via-purple-500 hover:to-purple-300 shadow-lg shadow-purple-500/40',
+        iconBackground: 'bg-gradient-to-r from-pink-900 via-purple-600 to-purple-400',
         text: 'text-white',
-        accent_text: 'text-teal-300'
+        accent_text: 'text-purple-400'
       }
-    case 'theme3': // Luxe Theme - Dark to Light Red
+    case 'theme3': // Luxe Theme - Black to Charcoal
       return {
         background: 'bg-black',
-        // Dark red to light red gradient
-        accent: 'from-red-800 via-red-500 to-red-300',
-        accentBackground: 'bg-gradient-to-r from-red-800 via-red-500 to-red-300',
-        // Luxurious red glass cards
-        card: 'bg-black/40 backdrop-blur-sm border-red-500/20 hover:border-red-500/40',
-        // Premium red gradient buttons with strong shadows
-        button: 'bg-gradient-to-r from-red-800 via-red-500 to-red-300 hover:from-red-700 hover:via-red-400 hover:to-red-200 shadow-lg shadow-red-500/30',
-        iconBackground: 'bg-gradient-to-r from-red-800 via-red-500 to-red-300',
+        // Black to charcoal gradient - elegant and sophisticated
+        accent: 'from-black via-gray-800 to-gray-600',
+        accentBackground: 'bg-gradient-to-r from-black via-gray-800 to-gray-600',
+        // Elegant charcoal glass cards
+        card: 'bg-black/40 backdrop-blur-sm border-gray-600/20 hover:border-gray-600/40',
+        // Sophisticated charcoal gradient buttons with subtle shadows
+        button: 'bg-gradient-to-r from-black via-gray-800 to-gray-600 hover:from-gray-900 hover:via-gray-700 hover:to-gray-500 shadow-lg shadow-gray-700/30',
+        iconBackground: 'bg-gradient-to-r from-black via-gray-800 to-gray-600',
         text: 'text-white',
-        accent_text: 'text-red-300'
+        accent_text: 'text-gray-300'
       }
     case 'default': // Default DriplyPay brand gradient
     default: // Fallback to default for unknown themes

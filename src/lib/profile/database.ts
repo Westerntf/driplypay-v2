@@ -35,9 +35,10 @@ export class ProfileDatabase {
       }
 
       // Then get related data using the user_id
-      const [socialLinksResult, paymentMethodsResult, goalsResult, recentTipsResult] = await Promise.all([
+      const [socialLinksResult, paymentMethodsResult, walletMethodsResult, goalsResult, recentTipsResult] = await Promise.all([
         client.from('social_links').select('*').eq('user_id', profile.user_id),
         client.from('payment_methods').select('*').eq('user_id', profile.user_id),
+        client.from('wallet_methods').select('*').eq('user_id', profile.user_id),
         client.from('goals').select('*').eq('user_id', profile.user_id),
         client
           .from('support_messages')
@@ -60,6 +61,19 @@ export class ProfileDatabase {
         order_index: method.display_order
       }))
 
+      // Map wallet methods to component expected format
+      const mappedWalletMethods = (walletMethodsResult.data || []).map((method: any) => ({
+        id: method.id,
+        type: method.type, // 'external', 'payid', 'bank'
+        platform: method.platform, // 'venmo', 'cashapp', 'payid', etc.
+        name: method.name,
+        handle: method.handle,
+        url: method.url,
+        details: method.details, // JSONB field for PayID/Bank details
+        enabled: method.enabled,
+        order_index: method.order_index
+      }))
+
       // Map social links to component expected format
       const mappedSocialLinks = (socialLinksResult.data || []).map((link: any) => ({
         id: link.id,
@@ -70,7 +84,7 @@ export class ProfileDatabase {
         order_index: link.display_order,
         photo_url: link.photo_url,
         photo_caption: link.photo_caption,
-        payment_method_id: link.payment_method_id
+        wallet_method_id: link.wallet_method_id
       }))
 
       // Combine the data
@@ -78,6 +92,7 @@ export class ProfileDatabase {
         ...profile,
         social_links: mappedSocialLinks,
         payment_methods: mappedPaymentMethods,
+        wallet_methods: mappedWalletMethods,
         goals: goalsResult.data || [],
         recent_tips: recentTipsResult.data || []
       }

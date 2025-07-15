@@ -12,7 +12,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { createPortal } from 'react-dom'
-import { SocialIcon } from '@/components/icons'
+import { SocialIcon, PaymentIcon } from '@/components/icons'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,6 +39,17 @@ interface PaymentMethod {
   type: string
 }
 
+interface WalletMethod {
+  id: string
+  type: 'external' | 'payid' | 'bank'
+  platform: string
+  name: string
+  handle?: string
+  url?: string
+  details?: any
+  enabled: boolean
+}
+
 interface SocialLink {
   id: string
   platform: string
@@ -46,7 +57,7 @@ interface SocialLink {
   url: string
   photo_url?: string | null
   photo_caption?: string | null
-  payment_method_id?: string | null
+  wallet_method_id?: string | null
 }
 
 interface EditableSocialLinksProps {
@@ -55,7 +66,7 @@ interface EditableSocialLinksProps {
   onUpdate: (links: SocialLink[]) => void
   isVisible: boolean
   onToggleVisibility: () => void
-  paymentMethods?: PaymentMethod[]
+  walletMethods?: WalletMethod[]
   userId: string
 }
 
@@ -65,7 +76,7 @@ export function EditableSocialLinks({
   onUpdate, 
   isVisible, 
   onToggleVisibility,
-  paymentMethods = [],
+  walletMethods = [],
   userId
 }: EditableSocialLinksProps) {
   console.log('🔍 EditableSocialLinks rendered with socialLinks:', socialLinks)
@@ -140,8 +151,8 @@ export function EditableSocialLinks({
   const handleOpenPhotoModal = (link: SocialLink) => {
     setPhotoModalLink(link.id)
     setPhotoCaption(link.photo_caption || '')
-    setEnablePaymentButton(!!link.payment_method_id)
-    setLinkedPaymentMethodId(link.payment_method_id || '')
+    setEnablePaymentButton(!!link.wallet_method_id)
+    setLinkedPaymentMethodId(link.wallet_method_id || '')
     setPaymentCtaText('Support Me')
     if (link.photo_url) {
       setPreviewUrl(link.photo_url)
@@ -224,7 +235,7 @@ export function EditableSocialLinks({
           ...link,
           photo_url: imageUrl,
           photo_caption: photoCaption || null,
-          payment_method_id: enablePaymentButton ? linkedPaymentMethodId : null
+          wallet_method_id: enablePaymentButton ? linkedPaymentMethodId : null
         } : link
       )
       
@@ -265,7 +276,7 @@ export function EditableSocialLinks({
         ...link,
         photo_url: null,
         photo_caption: null,
-        payment_method_id: null
+        wallet_method_id: null
       } : link
     )
     
@@ -304,7 +315,7 @@ export function EditableSocialLinks({
           <motion.button
             onClick={onToggleVisibility}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ${
-              isVisible ? 'bg-gradient-to-r from-blue-500 to-purple-500' : 'bg-gray-700'
+              isVisible ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg shadow-blue-500/25' : 'bg-gray-700'
             }`}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -608,123 +619,192 @@ export function EditableSocialLinks({
 
       {/* Photo Story Modal */}
       {photoModalLink && typeof window !== 'undefined' && createPortal(
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[999999]" onClick={handleClosePhotoModal}>
-          <div className="bg-gray-900 rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto border border-white/10 relative z-[999999]" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-white font-semibold text-lg">Story Photo</h3>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleClosePhotoModal}
-                className="text-gray-400 hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4 z-[999999]" onClick={handleClosePhotoModal}>
+          <div className="bg-black/90 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden relative z-[999999]" onClick={(e) => e.stopPropagation()}>
+            
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-black/95 backdrop-blur-xl border-b border-white/10 p-6 rounded-t-2xl">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  Story Photo
+                </h3>
+                <button
+                  onClick={handleClosePhotoModal}
+                  className="w-8 h-8 bg-white/10 hover:bg-white/20 rounded-xl flex items-center justify-center text-white/80 hover:text-white transition-all duration-200"
+                  aria-label="Close modal"
+                  title="Close"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-4">
+            {/* Modal Content */}
+            <div className="p-6 space-y-6 max-h-[calc(90vh-140px)] overflow-y-auto">
               {/* File Upload */}
-              <div className="space-y-2">
-                <Label className="text-white">Upload Image</Label>
-                <div className="border-2 border-dashed border-gray-600 rounded-lg p-6 text-center hover:border-gray-500 transition-colors">
+              <div className="space-y-3">
+                <Label className="text-white font-medium">Upload Image</Label>
+                <div className="border-2 border-dashed border-white/20 hover:border-blue-400/50 rounded-xl transition-all duration-300">
                   {previewUrl ? (
-                    <div className="relative">
+                    <div className="relative p-4">
                       <Image 
                         src={previewUrl} 
                         alt="Preview" 
-                        width={200}
+                        width={300}
                         height={200}
-                        className="max-h-48 mx-auto rounded object-cover"
+                        className="w-full h-48 object-cover rounded-lg border border-white/20"
                       />
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-2 right-2 bg-black/60 hover:bg-black/80"
+                      <button
+                        className="absolute top-6 right-6 w-8 h-8 bg-black/80 hover:bg-black/90 rounded-lg flex items-center justify-center text-white transition-all duration-200"
                         onClick={() => {
                           setSelectedFile(null)
                           setPreviewUrl('')
                         }}
+                        aria-label="Remove image"
+                        title="Remove image"
                       >
                         <X className="h-4 w-4" />
-                      </Button>
+                      </button>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <Upload className="h-8 w-8 mx-auto text-gray-400" />
-                      <div>
-                        <label htmlFor="photo-upload" className="cursor-pointer">
-                          <span className="text-blue-400 hover:text-blue-300">Click to upload</span>
-                          <span className="text-gray-400"> or drag and drop</span>
-                        </label>
-                        <input
-                          id="photo-upload"
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileSelect}
-                          className="hidden"
-                        />
+                    <label htmlFor="photo-upload" className="block p-8 cursor-pointer hover:bg-white/5 transition-all duration-300 rounded-xl">
+                      <div className="text-center space-y-4">
+                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl mx-auto flex items-center justify-center">
+                          <Upload className="h-8 w-8 text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-white font-medium mb-1">Click to upload or drag and drop</p>
+                          <p className="text-gray-400 text-sm">PNG, JPG, JPEG (max 10MB)</p>
+                        </div>
                       </div>
-                    </div>
+                      <input
+                        id="photo-upload"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="hidden"
+                      />
+                    </label>
                   )}
                 </div>
               </div>
 
               {/* Caption */}
-              <div className="space-y-2">
-                <Label className="text-white">Caption (optional)</Label>
+              <div className="space-y-3">
+                <Label className="text-white font-medium">Caption (optional)</Label>
                 <Textarea
                   value={photoCaption}
                   onChange={(e) => setPhotoCaption(e.target.value)}
                   placeholder="Add a caption to your story..."
                   rows={3}
-                  className="bg-gray-800 border-gray-600 text-white placeholder-gray-400"
+                  className="bg-black/50 border-white/20 text-white placeholder-gray-400 focus:border-blue-400/50 focus:ring-blue-400/25 resize-none rounded-xl transition-all duration-300"
                 />
               </div>
 
-              {/* Payment Button */}
+              {/* Payment Button Toggle */}
               <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="payment-button-modal"
-                    checked={enablePaymentButton}
-                    onCheckedChange={setEnablePaymentButton}
-                  />
-                  <Label htmlFor="payment-button-modal" className="text-white">Enable payment button</Label>
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                  <Label htmlFor="payment-button-modal" className="text-white font-medium">Enable payment button</Label>
+                  <motion.button
+                    onClick={() => setEnablePaymentButton(!enablePaymentButton)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all duration-300 ${
+                      enablePaymentButton ? 'bg-gradient-to-r from-blue-500 to-purple-500 shadow-lg shadow-blue-500/25' : 'bg-gray-600'
+                    }`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    title={`${enablePaymentButton ? 'Disable' : 'Enable'} payment button`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
+                      enablePaymentButton ? 'translate-x-6' : 'translate-x-1'
+                    }`} />
+                  </motion.button>
                 </div>
 
                 {enablePaymentButton && (
-                  <div className="space-y-2">
-                    <Label className="text-white">Payment Method</Label>
-                    <Select value={linkedPaymentMethodId} onValueChange={setLinkedPaymentMethodId}>
-                      <SelectTrigger className="bg-gray-800 border-gray-600 text-white">
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {paymentMethods.map((method) => (
-                          <SelectItem key={method.id} value={method.id}>
-                            {method.name} ({method.type})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-4 p-4 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-xl border border-blue-500/20">
+                    <Label className="text-white font-medium text-sm">Choose Payment Method</Label>
+                    <div className="grid grid-cols-1 gap-3 max-h-[240px] overflow-y-auto">
+                      {walletMethods.map((method) => {
+                        const isSelected = linkedPaymentMethodId === method.id
+                        
+                        return (
+                          <motion.button
+                            key={method.id}
+                            onClick={() => setLinkedPaymentMethodId(method.id)}
+                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-300 text-left w-full ${
+                              isSelected 
+                                ? 'bg-gradient-to-r from-blue-500/30 to-purple-500/30 border-blue-400/50 shadow-lg shadow-blue-500/25' 
+                                : 'bg-black/40 border-white/20 hover:bg-black/60 hover:border-white/30'
+                            }`}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                              isSelected 
+                                ? 'bg-gradient-to-br from-blue-500/40 to-purple-500/40 border border-blue-400/50' 
+                                : 'bg-white/10 border border-white/20'
+                            }`}>
+                              <PaymentIcon 
+                                type={method.platform} 
+                                className="w-6 h-6 text-white" 
+                                size={24} 
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-white font-medium text-sm capitalize">{method.platform}</div>
+                              <div className="text-gray-400 text-xs truncate">
+                                {method.handle ? `@${method.handle}` : method.name}
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <div className="w-5 h-5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                                <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                              </div>
+                            )}
+                          </motion.button>
+                        )
+                      })}
+                      {walletMethods.length === 0 && (
+                        <div className="text-center py-6 text-gray-400">
+                          <div className="text-sm">No payment methods available</div>
+                          <div className="text-xs mt-1">Add payment methods in your wallet settings</div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-black/95 backdrop-blur-xl border-t border-white/10 p-6 rounded-b-2xl">
+              <div className="flex gap-3">
+                <Button
+                  onClick={handleClosePhotoModal}
+                  variant="outline"
+                  className="flex-1 bg-white/10 border-white/20 text-white hover:bg-white/20 hover:text-white"
+                >
+                  Cancel
+                </Button>
                 <Button
                   onClick={handleSavePhoto}
                   disabled={uploading}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white font-medium rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                 >
-                  {uploading ? 'Saving...' : 'Save Story'}
+                  {uploading ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </div>
+                  ) : (
+                    'Save Story'
+                  )}
                 </Button>
                 {previewUrl && (
                   <Button
                     onClick={handleRemovePhoto}
                     variant="destructive"
-                    className="px-4"
+                    className="px-4 bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30 hover:text-red-300"
                   >
                     Remove
                   </Button>

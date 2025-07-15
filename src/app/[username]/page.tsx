@@ -9,6 +9,7 @@ import { Suspense } from 'react'
 import { ProfileDatabase } from '@/lib/profile/database'
 import { PublicProfileHeader } from '@/components/profile/public/PublicProfileHeader'
 import { PublicSocialLinks } from '@/components/profile/public/PublicSocialLinks'
+import { PublicWallet } from '@/components/profile/public/PublicWallet'
 import { PublicPaymentMethods } from '@/components/profile/public/PublicPaymentMethods'
 import { PublicGoals } from '@/components/profile/public/PublicGoals'
 import { PublicShareProfile } from '@/components/profile/public/PublicShareProfile'
@@ -133,19 +134,18 @@ export default async function PublicProfilePage({ params }: { params: { username
             {(serializedProfile.show_social_links ?? true) && (
               <PublicSocialLinks 
                 socialLinks={serializedProfile.social_links} 
-                paymentMethods={serializedProfile.payment_methods}
+                walletMethods={serializedProfile.wallet_methods || []}
                 profileUsername={serializedProfile.username}
                 themeStyles={themeStyles}
               />
             )}
             
-            {/* Payment Methods - Mobile */}
+            {/* Digital Wallet - Mobile */}
             {(serializedProfile.show_payment_methods ?? true) && (
-              <div id="payment-methods">
-                <PublicPaymentMethods 
-                  paymentMethods={serializedProfile.payment_methods}
+              <div id="wallet">
+                <PublicWallet 
+                  walletMethods={serializedProfile.wallet_methods || []}
                   profileUsername={serializedProfile.username}
-                  minTipAmount={serializedProfile.min_tip_amount}
                   themeStyles={themeStyles}
                 />
               </div>
@@ -182,7 +182,7 @@ export default async function PublicProfilePage({ params }: { params: { username
               <div className="w-full">
                 <PublicSocialLinks 
                   socialLinks={serializedProfile.social_links} 
-                  paymentMethods={serializedProfile.payment_methods}
+                  walletMethods={serializedProfile.wallet_methods || []}
                   profileUsername={serializedProfile.username}
                   themeStyles={themeStyles}
                 />
@@ -193,13 +193,12 @@ export default async function PublicProfilePage({ params }: { params: { username
             <div className="grid lg:grid-cols-2 lg:gap-8 w-full">
               {/* Left Column - Desktop */}
               <div className="space-y-8 w-full">
-                {/* Payment Methods - Desktop Left */}
+                {/* Digital Wallet - Desktop Left */}
                 {(serializedProfile.show_payment_methods ?? true) && (
-                  <div id="payment-methods" className="w-full">
-                    <PublicPaymentMethods 
-                      paymentMethods={serializedProfile.payment_methods}
+                  <div id="wallet" className="w-full">
+                    <PublicWallet 
+                      walletMethods={serializedProfile.wallet_methods || []}
                       profileUsername={serializedProfile.username}
-                      minTipAmount={serializedProfile.min_tip_amount}
                       themeStyles={themeStyles}
                     />
                   </div>

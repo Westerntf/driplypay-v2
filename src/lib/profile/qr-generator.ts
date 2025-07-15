@@ -337,12 +337,17 @@ async function embedLogo(
  */
 export function getQRThemeColors(theme: string) {
   const themeColors: Record<string, { dark: string; light: string }> = {
-    clean: { dark: '#1F2937', light: '#FFFFFF' },
-    neon: { dark: '#10B981', light: '#000000' },
-    luxe: { dark: '#7C3AED', light: '#FEFCE8' }
+    default: { dark: '#7C3AED', light: '#FFFFFF' },
+    theme1: { dark: '#1D4ED8', light: '#FFFFFF' }, // Ocean theme - dark blue to light blue
+    theme2: { dark: '#9333EA', light: '#FFFFFF' }, // Dark pink to purple theme
+    theme3: { dark: '#374151', light: '#FFFFFF' }, // Black to charcoal theme
+    // Legacy theme support
+    clean: { dark: '#1D4ED8', light: '#FFFFFF' },
+    neon: { dark: '#9333EA', light: '#FFFFFF' },
+    luxe: { dark: '#374151', light: '#FFFFFF' }
   }
   
-  return themeColors[theme] || themeColors.clean
+  return themeColors[theme] || themeColors.default
 }
 
 /**

@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       target_amount, 
       current_amount = 0,
       is_active = true,
-      payment_method_id
+      wallet_method_id
     } = body
 
     // Validate required fields
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       target_amount,
       current_amount,
       is_active,
-      payment_method_id: payment_method_id || null
+      wallet_method_id: wallet_method_id || null
     } as any)
 
     return NextResponse.json({
@@ -80,12 +80,12 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('POST /api/goals error:', error)
     
-    // Check if error is related to missing payment_method_id column
-    if (error instanceof Error && error.message.includes('payment_method_id')) {
+    // Check if error is related to missing wallet_method_id column
+    if (error instanceof Error && error.message.includes('wallet_method_id')) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Database missing payment_method_id column. Please run: ALTER TABLE goals ADD COLUMN payment_method_id UUID REFERENCES payment_methods(id) ON DELETE SET NULL;',
+          error: 'Database missing wallet_method_id column. Please run: ALTER TABLE goals ADD COLUMN wallet_method_id UUID REFERENCES wallet_methods(id) ON DELETE SET NULL;',
           fix: 'Run the SQL command in Supabase Dashboard to add the missing column'
         },
         { status: 500 }
@@ -112,7 +112,7 @@ export async function PUT(request: NextRequest) {
       target_amount, 
       current_amount,
       is_active,
-      payment_method_id
+      wallet_method_id
     } = body
 
     // Validate required fields
@@ -132,7 +132,7 @@ export async function PUT(request: NextRequest) {
       target_amount,
       current_amount,
       is_active,
-      payment_method_id: payment_method_id || null
+      wallet_method_id: wallet_method_id || null
     } as any)
 
     return NextResponse.json({
@@ -143,12 +143,12 @@ export async function PUT(request: NextRequest) {
   } catch (error) {
     console.error('PUT /api/goals error:', error)
     
-    // Check if error is related to missing payment_method_id column
-    if (error instanceof Error && error.message.includes('payment_method_id')) {
+    // Check if error is related to missing wallet_method_id column
+    if (error instanceof Error && error.message.includes('wallet_method_id')) {
       return NextResponse.json(
         { 
           success: false, 
-          error: 'Database missing payment_method_id column. Please run: ALTER TABLE goals ADD COLUMN payment_method_id UUID REFERENCES payment_methods(id) ON DELETE SET NULL;',
+          error: 'Database missing wallet_method_id column. Please run: ALTER TABLE goals ADD COLUMN wallet_method_id UUID REFERENCES wallet_methods(id) ON DELETE SET NULL;',
           fix: 'Run the SQL command in Supabase Dashboard to add the missing column'
         },
         { status: 500 }

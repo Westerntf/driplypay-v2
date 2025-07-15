@@ -4,7 +4,7 @@
  */
 
 export { EditableSocialLinks } from './EditableSocialLinks'
-export { EditablePaymentMethods } from './EditablePaymentMethods'
+export { EditableWalletMethods } from './EditableWalletMethods'
 export { EditableGoals } from './EditableGoals'
 export { EditableThemeSelector } from './EditableThemeSelector'
 export { EditableQRGenerator } from './EditableQRGenerator'

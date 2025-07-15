@@ -41,7 +41,7 @@ export default function ProfileEditorPage() {
     const isRecentlyCreated = createdAt > sixtyMinutesAgo
     
     const hasMinimalData = (
-      (!profileData.payment_methods || profileData.payment_methods.length === 0) &&
+      (!profileData.wallet_methods || profileData.wallet_methods.length === 0) &&
       (!profileData.social_links || profileData.social_links.length === 0) &&
       (!profileData.bio || profileData.bio.trim() === '') &&
       (!profileData.profile_image || profileData.profile_image.trim() === '') &&
@@ -52,7 +52,7 @@ export default function ProfileEditorPage() {
       createdAt: createdAt.toISOString(),
       isRecentlyCreated,
       hasMinimalData,
-      paymentMethods: profileData.payment_methods?.length || 0,
+      walletMethods: profileData.wallet_methods?.length || 0,
       socialLinks: profileData.social_links?.length || 0,
       bio: profileData.bio || 'empty',
       profileImage: profileData.profile_image || 'empty',
@@ -79,23 +79,24 @@ export default function ProfileEditorPage() {
           
         if (profileError) throw profileError
 
-        const { data: paymentMethodsData } = await supabase
-          .from('payment_methods')
+        // Fetch wallet methods
+        const { data: walletMethodsData } = await supabase
+          .from('wallet_methods')
           .select('*')
           .eq('user_id', user.id)
-          .order('display_order', { ascending: true })
+          .order('order_index', { ascending: true })
 
-        // Map payment methods to component expected format
-        const paymentMethods = (paymentMethodsData || []).map((method: any) => ({
+        // Map wallet methods to component expected format
+        const walletMethods = (walletMethodsData || []).map((method: any) => ({
           id: method.id,
           type: method.type,
-          name: method.name, // Use name field from database
-          label: method.name, // Map name to label for component compatibility
+          platform: method.platform,
+          name: method.name,
           handle: method.handle,
           url: method.url,
-          enabled: method.enabled, // Use actual enabled field
-          preferred: method.preferred,
-          order_index: method.display_order
+          details: method.details,
+          enabled: method.enabled,
+          order_index: method.order_index
         }))
 
         // Try to get social_links and goals, but don't fail if tables don't exist
@@ -117,7 +118,7 @@ export default function ProfileEditorPage() {
             // Include photo story fields
             photo_url: link.photo_url,
             photo_caption: link.photo_caption,
-            payment_method_id: link.payment_method_id
+            wallet_method_id: link.wallet_method_id
           }))
         } catch (error) {
           console.warn('social_links table might not exist:', error)
@@ -142,7 +143,7 @@ export default function ProfileEditorPage() {
         // Combine all data into complete profile object
         const completeProfile = {
           ...profileData,
-          payment_methods: paymentMethods || [],
+          wallet_methods: walletMethods || [],
           social_links: socialLinks,
           goals: goals
         }
@@ -156,7 +157,7 @@ export default function ProfileEditorPage() {
         if (authProfile) {
           setProfile({
             ...authProfile,
-            payment_methods: [],
+            wallet_methods: [],
             social_links: [],
             goals: []
           })
@@ -186,58 +187,50 @@ export default function ProfileEditorPage() {
     }
     
     try {
-      let newPaymentMethodIds: { [oldId: string]: string } = {}
-      
-      // Handle payment methods updates
-      if (updates.payment_methods) {
-        console.log('💳 Updating payment methods:', updates.payment_methods)
+      // Handle wallet methods updates
+      if (updates.wallet_methods) {
+        console.log('💰 Updating wallet methods:', updates.wallet_methods)
         
-        // Delete existing payment methods for this user
-        const { error: deleteError } = await supabase
-          .from('payment_methods')
+        // Delete existing wallet methods for this user
+        const { error: deleteWalletError } = await supabase
+          .from('wallet_methods')
           .delete()
           .eq('user_id', user.id)
           
-        if (deleteError) {
-          console.error('❌ Error deleting payment methods:', deleteError)
-          throw deleteError
+        if (deleteWalletError) {
+          console.error('❌ Error deleting wallet methods:', deleteWalletError)
+          throw deleteWalletError
         }
         
-        // Insert new payment methods
-        if (updates.payment_methods.length > 0) {
-          const paymentMethodsToInsert = updates.payment_methods.map((method: any, index: number) => ({
+        // Insert new wallet methods
+        if (updates.wallet_methods.length > 0) {
+          const walletMethodsToInsert = updates.wallet_methods.map((method: any, index: number) => ({
             user_id: user.id,
-            type: method.type || 'custom',
-            name: method.name || '', // Use 'name' field to match database schema
-            url: method.url || '',
-            handle: method.handle || '',
-            preferred: method.preferred || false,
-            display_order: index,
+            type: method.type || 'external',
+            platform: method.platform || 'custom',
+            name: method.name || '',
+            handle: method.handle || null,
+            url: method.url || null,
+            details: method.details || {},
+            enabled: method.enabled ?? true,
+            order_index: index,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           }))
           
-          console.log('💳 Inserting payment methods:', paymentMethodsToInsert)
+          console.log('💰 Inserting wallet methods:', walletMethodsToInsert)
           
-          const { data: insertedPaymentMethods, error: paymentError } = await supabase
-            .from('payment_methods')
-            .insert(paymentMethodsToInsert)
+          const { data: insertedWalletMethods, error: walletError } = await supabase
+            .from('wallet_methods')
+            .insert(walletMethodsToInsert)
             .select()
             
-          if (paymentError) {
-            console.error('❌ Error inserting payment methods:', paymentError)
-            throw paymentError
+          if (walletError) {
+            console.error('❌ Error inserting wallet methods:', walletError)
+            throw walletError
           }
           
-          // Create mapping from old IDs to new IDs
-          updates.payment_methods.forEach((oldMethod: any, index: number) => {
-            if (oldMethod.id && insertedPaymentMethods && insertedPaymentMethods[index]) {
-              newPaymentMethodIds[oldMethod.id] = insertedPaymentMethods[index].id
-            }
-          })
-          
-          console.log('✅ Payment methods saved successfully')
-          console.log('🔗 Payment method ID mapping:', newPaymentMethodIds)
+          console.log('✅ Wallet methods saved successfully')
         }
       }
       
@@ -295,7 +288,7 @@ export default function ProfileEditorPage() {
                 // Include photo story fields
                 photo_url: link.photo_url || null,
                 photo_caption: link.photo_caption || null,
-                payment_method_id: link.payment_method_id || null,
+                wallet_method_id: link.wallet_method_id || null,
                 username: link.username || '', // Add username field
                 order_index: index, // Add order_index field
                 updated_at: new Date().toISOString(),
@@ -382,13 +375,6 @@ export default function ProfileEditorPage() {
           // Insert new goals
           if (updates.goals.length > 0) {
             const goalsToInsert = updates.goals.map((goal: any) => {
-              // Map old payment method ID to new payment method ID
-              let paymentMethodId = goal.payment_method_id
-              if (paymentMethodId && newPaymentMethodIds[paymentMethodId]) {
-                paymentMethodId = newPaymentMethodIds[paymentMethodId]
-                console.log(`🔗 Mapping goal payment method: ${goal.payment_method_id} → ${paymentMethodId}`)
-              }
-              
               return {
                 user_id: user.id,
                 title: goal.title || '',
@@ -396,7 +382,7 @@ export default function ProfileEditorPage() {
                 target_amount: Math.round((goal.target || goal.target_amount || 0) * 100), // Convert to cents
                 current_amount: Math.round((goal.current || goal.current_amount || 0) * 100), // Convert to cents
                 is_active: true,
-                payment_method_id: paymentMethodId || null,
+                wallet_method_id: goal.wallet_method_id || null, // Use wallet method instead of payment method
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               }
@@ -427,7 +413,7 @@ export default function ProfileEditorPage() {
       
       // Update basic profile fields
       const profileFields = { ...updates }
-      delete profileFields.payment_methods
+      delete profileFields.wallet_methods
       delete profileFields.social_links
       delete profileFields.goals
       
@@ -458,23 +444,24 @@ export default function ProfileEditorPage() {
         .eq('user_id', user.id)
         .single()
 
-      const { data: paymentMethodsData } = await supabase
-        .from('payment_methods')
+      // Fetch updated wallet methods
+      const { data: walletMethodsData } = await supabase
+        .from('wallet_methods')
         .select('*')
         .eq('user_id', user.id)
-        .order('display_order', { ascending: true })
+        .order('order_index', { ascending: true })
 
-      // Map payment methods to component expected format
-      const paymentMethods = (paymentMethodsData || []).map((method: any) => ({
+      // Map wallet methods to component expected format
+      const walletMethods = (walletMethodsData || []).map((method: any) => ({
         id: method.id,
         type: method.type,
-        name: method.name, // Use name field from database
-        label: method.name, // Map name to label for component compatibility
+        platform: method.platform,
+        name: method.name,
         handle: method.handle,
         url: method.url,
-        enabled: method.enabled, // Use actual enabled field
-        preferred: method.preferred,
-        order_index: method.display_order
+        details: method.details,
+        enabled: method.enabled,
+        order_index: method.order_index
       }))
 
       let socialLinks: any[] = []
@@ -515,7 +502,7 @@ export default function ProfileEditorPage() {
       // Update local state with fresh data
       const updatedProfile = {
         ...profileData,
-        payment_methods: paymentMethods,
+        wallet_methods: walletMethods,
         social_links: socialLinks,
         goals: goals
       }

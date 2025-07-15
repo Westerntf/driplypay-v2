@@ -51,10 +51,12 @@ interface QRCodeManagerProps {
     username: string
     url: string
   }>
-  paymentMethods: Array<{
+  walletMethods: Array<{
     id: string
-    type: string
+    platform: string
     name: string
+    account_identifier: string
+    payment_type: 'external' | 'internal'
   }>
   userId: string
   profileUrl: string
@@ -63,7 +65,7 @@ interface QRCodeManagerProps {
 
 export function QRCodeManager({ 
   socialLinks, 
-  paymentMethods, 
+  walletMethods, 
   userId, 
   profileUrl, 
   onQRUpdate 
@@ -129,7 +131,7 @@ export function QRCodeManager({
         content = selectedSocial?.url || ''
         break
       case 'payment':
-        const selectedPayment = paymentMethods.find(method => method.id === formData.linked_payment_method_id)
+        const selectedPayment = walletMethods.find(method => method.id === formData.linked_payment_method_id)
         if (selectedPayment) {
           // You could add payment-specific URL logic here
           content = `${profileUrl}?pay=${selectedPayment.id}`
@@ -143,7 +145,7 @@ export function QRCodeManager({
     }
     
     setFormData(prev => ({ ...prev, data_content: content }))
-  }, [formData.type, formData.linked_social_link_id, formData.linked_payment_method_id, formData.include_payment_amount, formData.payment_amount, formData.data_content, profileUrl, socialLinks, paymentMethods])
+  }, [formData.type, formData.linked_social_link_id, formData.linked_payment_method_id, formData.include_payment_amount, formData.payment_amount, formData.data_content, profileUrl, socialLinks, walletMethods])
 
   // Load QR codes
   const loadQRCodes = useCallback(async () => {
@@ -560,9 +562,9 @@ export function QRCodeManager({
                           <SelectValue placeholder="Select payment method" />
                         </SelectTrigger>
                         <SelectContent>
-                          {paymentMethods.map((method) => (
+                          {walletMethods.map((method) => (
                             <SelectItem key={method.id} value={method.id}>
-                              {method.type} - {method.name}
+                              {method.platform} - {method.name}
                             </SelectItem>
                           ))}
                         </SelectContent>

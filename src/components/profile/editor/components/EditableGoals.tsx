@@ -26,7 +26,7 @@ interface Goal {
   target: number
   current: number
   currency?: string
-  payment_method_id?: string
+  wallet_method_id?: string // Updated to use wallet methods
 }
 
 interface PaymentMethod {
@@ -36,13 +36,24 @@ interface PaymentMethod {
   url: string
 }
 
+interface WalletMethod {
+  id: string
+  type: 'external' | 'payid' | 'bank'
+  platform: string
+  name: string
+  handle?: string
+  url?: string
+  details?: any
+  enabled: boolean
+}
+
 interface EditableGoalsProps {
   goals: Goal[]
   themeStyles: ThemeStyles
   onUpdate: (goals: Goal[]) => void
   isVisible: boolean
   onToggleVisibility: () => void
-  paymentMethods?: PaymentMethod[]
+  walletMethods?: WalletMethod[]
 }
 
 export function EditableGoals({ 
@@ -51,17 +62,17 @@ export function EditableGoals({
   onUpdate, 
   isVisible, 
   onToggleVisibility,
-  paymentMethods = []
+  walletMethods = []
 }: EditableGoalsProps) {
   const [isAddingGoal, setIsAddingGoal] = useState(false)
   const [editingGoal, setEditingGoal] = useState<string | null>(null)
-  const [newGoal, setNewGoal] = useState({ title: '', description: '', target: 0, current: 0, currency: 'USD', payment_method_id: '' })
+  const [newGoal, setNewGoal] = useState({ title: '', description: '', target: 0, current: 0, currency: 'USD', wallet_method_id: '' })
   const [editingValues, setEditingValues] = useState<any>({})
 
   const handleAddGoal = () => {
     if (newGoal.title && newGoal.target > 0) {
       onUpdate([...goals, { ...newGoal, id: Date.now().toString() }])
-      setNewGoal({ title: '', description: '', target: 0, current: 0, currency: 'USD', payment_method_id: '' })
+      setNewGoal({ title: '', description: '', target: 0, current: 0, currency: 'USD', wallet_method_id: '' })
       setIsAddingGoal(false)
     }
   }
@@ -228,9 +239,9 @@ export function EditableGoals({
                       aria-label="Payment method selection"
                     >
                       <option value="">Select payment method</option>
-                      {paymentMethods.map((method) => (
+                      {walletMethods.map((method: WalletMethod) => (
                         <option key={method.id} value={method.id}>
-                          {method.display_name} ({method.type})
+                          {method.name} ({method.platform})
                         </option>
                       ))}
                     </select>
@@ -324,10 +335,10 @@ export function EditableGoals({
                   </div>
 
                   {/* Preferred payment method */}
-                  {goal.payment_method_id && (
+                  {goal.wallet_method_id && (
                     <div className="mt-4 p-3 bg-white/5 rounded-xl border border-white/10">
                       {(() => {
-                        const method = paymentMethods.find(m => m.id === goal.payment_method_id)
+                        const method = walletMethods.find((m: WalletMethod) => m.id === goal.wallet_method_id)
                         return method ? (
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
@@ -337,8 +348,8 @@ export function EditableGoals({
                                 </svg>
                               </div>
                               <div>
-                                <p className="text-white text-sm font-medium">{method.display_name}</p>
-                                <p className="text-gray-400 text-xs">Preferred payment method • {method.type}</p>
+                                <p className="text-white text-sm font-medium">{method.name}</p>
+                                <p className="text-gray-400 text-xs">Preferred payment method • {method.platform}</p>
                               </div>
                             </div>
                             <div className="w-2 h-2 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full"></div>
@@ -420,16 +431,16 @@ export function EditableGoals({
                     <option value="CAD">CAD ($)</option>
                   </select>
                   <select
-                    value={newGoal.payment_method_id}
-                    onChange={(e) => setNewGoal({ ...newGoal, payment_method_id: e.target.value })}
+                    value={newGoal.wallet_method_id}
+                    onChange={(e) => setNewGoal({ ...newGoal, wallet_method_id: e.target.value })}
                     className="w-full bg-black/40 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-gray-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-all duration-300"
                     title="Payment method selection"
                     aria-label="Payment method selection"
                   >
                     <option value="">Select payment method</option>
-                    {paymentMethods.map((method) => (
+                    {walletMethods.map((method) => (
                       <option key={method.id} value={method.id}>
-                        {method.display_name} ({method.type})
+                        {method.name} ({method.platform})
                       </option>
                     ))}
                   </select>

@@ -45,26 +45,26 @@ export function EditableThemeSelector({
     {
       id: 'theme1',
       name: 'Ocean',
-      description: 'Light to dark blue gradient',
-      colors: ['#87CEEB', '#3B82F6', '#1E3A8A'],
-      accent: '#3B82F6',
-      preview: 'from-sky-300 via-blue-500 to-blue-800'
+      description: 'Dark blue to light blue gradient',
+      colors: ['#172554', '#1D4ED8', '#93C5FD'],
+      accent: '#1D4ED8',
+      preview: 'from-blue-950 via-blue-700 to-blue-300'
     },
     {
       id: 'theme2',
       name: 'Neon',
-      description: 'Mint to dark green',
-      colors: ['#5EEAD4', '#10B981', '#166534'],
-      accent: '#10B981',
-      preview: 'from-teal-300 via-emerald-500 to-green-800'
+      description: 'Dark pink to light purple',
+      colors: ['#831843', '#9333EA', '#C084FC'],
+      accent: '#9333EA',
+      preview: 'from-pink-900 via-purple-600 to-purple-400'
     },
     {
       id: 'theme3',
       name: 'Luxe',
-      description: 'Dark to light red',
-      colors: ['#991B1B', '#EF4444', '#FCA5A5'],
-      accent: '#EF4444',
-      preview: 'from-red-800 via-red-500 to-red-300'
+      description: 'Black to charcoal gradient',
+      colors: ['#000000', '#374151', '#6B7280'],
+      accent: '#374151',
+      preview: 'from-black via-gray-800 to-gray-600'
     }
   ]
 

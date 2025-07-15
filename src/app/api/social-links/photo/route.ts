@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase'
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { linkId, photo_url, photo_caption, payment_method_id } = await request.json()
+    const { linkId, photo_url, photo_caption, wallet_method_id } = await request.json()
 
     if (!linkId) {
       return NextResponse.json(
@@ -26,7 +26,7 @@ export async function PATCH(request: NextRequest) {
       .update({
         photo_url: photo_url || null,
         photo_caption: photo_caption || null,
-        payment_method_id: payment_method_id || null,
+        wallet_method_id: wallet_method_id || null,
         updated_at: new Date().toISOString()
       })
       .eq('id', linkId)

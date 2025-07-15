@@ -13,14 +13,24 @@ import { createPortal } from 'react-dom'
 import Image from 'next/image'
 import './animations.css'
 
-interface PaymentMethod {
+interface WalletMethod {
   id: string
+  type: 'external' | 'payid' | 'bank'
+  platform: string
   name: string
-  type: string
   handle?: string
   url?: string
+  details?: {
+    email?: string
+    phone?: string
+    bsb?: string
+    account?: string
+  }
   enabled: boolean
 }
+
+// Keep PaymentMethod for backward compatibility
+interface PaymentMethod extends WalletMethod {}
 
 interface SocialLink {
   id: string
@@ -31,13 +41,13 @@ interface SocialLink {
   order_index?: number
   photo_url?: string
   photo_caption?: string
-  payment_method_id?: string
+  wallet_method_id?: string
   [key: string]: any
 }
 
 interface PublicSocialLinksProps {
   socialLinks: SocialLink[]
-  paymentMethods?: PaymentMethod[]
+  walletMethods: WalletMethod[]
   profileUsername: string
   themeStyles: {
     background: string
@@ -51,8 +61,16 @@ interface PublicSocialLinksProps {
   }
 }
 
-export function PublicSocialLinks({ socialLinks, paymentMethods = [], profileUsername, themeStyles }: PublicSocialLinksProps) {
+export function PublicSocialLinks({ 
+  socialLinks, 
+  walletMethods, 
+  profileUsername, 
+  themeStyles 
+}: PublicSocialLinksProps) {
   const [selectedStoryLink, setSelectedStoryLink] = useState<SocialLink | null>(null)
+
+  // Use walletMethods directly since we've removed payment methods
+  const activeMethods = walletMethods
 
   // Extract theme identifier for CSS classes based on your 4 actual themes
   const getThemeClass = () => {
@@ -97,13 +115,16 @@ export function PublicSocialLinks({ socialLinks, paymentMethods = [], profileUse
 
   // Handle payment method click
   const handlePaymentClick = (link: SocialLink) => {
-    const paymentMethod = paymentMethods.find(pm => pm.id === link.payment_method_id)
+    const paymentMethod = activeMethods.find((pm: WalletMethod) => pm.id === link.wallet_method_id)
     if (paymentMethod) {
-      if (paymentMethod.type === 'stripe') {
-        // Handle Stripe payment
-        console.log('Stripe payment for', paymentMethod)
-      } else if (paymentMethod.url) {
+      if (paymentMethod.type === 'external' && paymentMethod.url) {
+        // Handle external payment redirect
         window.open(paymentMethod.url, '_blank', 'noopener,noreferrer')
+      } else if (paymentMethod.type === 'payid' || paymentMethod.type === 'bank') {
+        // Handle internal payment modal (PayID or Bank Transfer)
+        // This would trigger the same modal as in PublicWallet
+        console.log('Internal payment method clicked:', paymentMethod)
+        // TODO: Implement modal logic here similar to PublicWallet
       }
     }
   }
@@ -303,87 +324,129 @@ export function PublicSocialLinks({ socialLinks, paymentMethods = [], profileUse
       {/* Story Modal */}
       {selectedStoryLink && typeof window !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[999999]"
+          className="fixed inset-0 bg-black z-[999999] flex flex-col"
           onClick={closeStoryModal}
         >
-          <div 
-            className="bg-gray-900 rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-white/10 relative z-[999999]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-800">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-xl bg-gradient-to-r ${themeStyles.accent} p-0.5`}>
-                  <div className="w-full h-full rounded-xl bg-black/80 flex items-center justify-center">
-                    <SocialIcon platform={selectedStoryLink.platform} className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold text-lg">{selectedStoryLink.label || selectedStoryLink.platform}</h3>
-                  <p className="text-gray-400 text-sm">@{profileUsername}</p>
+          {/* Story Progress Bar */}
+          <div className="absolute top-4 left-4 right-4 z-30">
+            <div className="flex gap-1">
+              <div className={`flex-1 h-1 rounded-full bg-gradient-to-r ${themeStyles.accent} opacity-80 shadow-lg`} />
+            </div>
+          </div>
+
+          {/* Profile Header Overlay */}
+          <div className="absolute top-8 left-4 right-4 z-30 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-r ${themeStyles.accent} p-0.5`}>
+                <div className="w-full h-full rounded-full bg-black flex items-center justify-center">
+                  <SocialIcon platform={selectedStoryLink.platform} className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                 </div>
               </div>
-              <button
-                onClick={closeStoryModal}
-                className="text-gray-400 hover:text-white transition-colors p-2"
-                title="Close story"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              <div>
+                <h3 className="text-white font-semibold text-sm sm:text-base drop-shadow-lg">{selectedStoryLink.label || selectedStoryLink.platform}</h3>
+                <p className="text-white/80 text-xs sm:text-sm drop-shadow-lg">@{profileUsername}</p>
+              </div>
             </div>
+            <button
+              onClick={closeStoryModal}
+              className="text-white/80 hover:text-white transition-colors p-2 hover:bg-black/20 rounded-full backdrop-blur-sm"
+              title="Close story"
+            >
+              <X className="h-6 w-6 sm:h-7 sm:w-7 drop-shadow-lg" />
+            </button>
+          </div>
 
-            {/* Story Content */}
-            <div className="p-6 space-y-6">
-              {/* Story Image */}
-              {selectedStoryLink.photo_url && (
-                <div className="relative rounded-xl overflow-hidden">
-                  <Image
-                    src={selectedStoryLink.photo_url}
-                    alt="Story photo"
-                    width={400}
-                    height={300}
-                    className="w-full h-auto object-cover"
-                  />
+          {/* Full Screen Story Content */}
+          <div 
+            className="flex-1 relative overflow-hidden flex items-center justify-center pt-20 pb-32"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Story Image and Caption Container */}
+            {selectedStoryLink.photo_url && (
+              <div className="relative w-full h-full flex flex-col items-center justify-center px-4 sm:px-6">
+                {/* Clean background - no blur effects */}
+                <div className="absolute inset-0 bg-black" />
+                
+                {/* Centered content container with proper spacing */}
+                <div className="relative z-10 flex flex-col items-center justify-center max-h-full space-y-4">
+                  
+                  {/* Main image - adaptive sizing based on aspect ratio */}
+                  <div className="relative flex items-center justify-center">
+                    <Image
+                      src={selectedStoryLink.photo_url}
+                      alt="Story photo"
+                      width={800}
+                      height={600}
+                      className="max-w-[90vw] max-h-[60vh] sm:max-w-[80vw] sm:max-h-[65vh] md:max-w-[70vw] md:max-h-[70vh] w-auto h-auto object-contain rounded-2xl shadow-2xl"
+                      quality={95}
+                      priority
+                      style={{ 
+                        maxWidth: '90vw',
+                        maxHeight: '60vh',
+                        width: 'auto',
+                        height: 'auto'
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Story Caption - Positioned below photo with proper spacing */}
+                  {selectedStoryLink.photo_caption && (
+                    <div className="w-full max-w-sm sm:max-w-md px-2">
+                      <div className="bg-black/60 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+                        <p className="text-white text-sm leading-relaxed text-center">
+                          {selectedStoryLink.photo_caption}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                  
                 </div>
-              )}
+                
+                {/* Subtle gradient for UI readability only at bottom */}
+                <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/40 to-transparent z-20 pointer-events-none" />
+              </div>
+            )}
+          </div>
 
-              {/* Caption */}
-              {selectedStoryLink.photo_caption && (
-                <div className="space-y-2">
-                  <h4 className="text-white font-medium">Caption</h4>
-                  <p className="text-gray-300 text-sm leading-relaxed">{selectedStoryLink.photo_caption}</p>
-                </div>
-              )}
-
-              {/* Payment Button */}
-              {selectedStoryLink.payment_method_id && paymentMethods.find(pm => pm.id === selectedStoryLink.payment_method_id) && (
-                <div className="space-y-3">
-                  <h4 className="text-white font-medium">Support This Content</h4>
+          {/* Enhanced Bottom Actions - Proportional to Content */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 z-30">
+            <div className="max-w-lg mx-auto">
+              {/* Enhanced Action Bar - Bigger and More Prominent */}
+              <div className="bg-black/50 backdrop-blur-xl rounded-2xl border border-white/20 p-4 shadow-2xl">
+                
+                {/* Side by Side Buttons - Adjusted Proportions */}
+                <div className={`flex gap-3 ${selectedStoryLink.wallet_method_id && activeMethods.find((pm: WalletMethod) => pm.id === selectedStoryLink.wallet_method_id) ? '' : 'justify-center'}`}>
+                  
+                  {/* Payment Button - Theme-based colors, shorter width */}
+                  {selectedStoryLink.wallet_method_id && activeMethods.find((pm: WalletMethod) => pm.id === selectedStoryLink.wallet_method_id) && (
+                    <button
+                      onClick={() => handlePaymentClick(selectedStoryLink)}
+                      className={`w-32 group relative overflow-hidden rounded-xl bg-gradient-to-r ${themeStyles.accent} p-0.5 hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]`}
+                    >
+                      <div className="relative bg-black/20 backdrop-blur-sm rounded-xl px-4 py-4 flex items-center justify-center gap-2 group-hover:bg-black/10 transition-all duration-300">
+                        <PaymentIcon 
+                          type={activeMethods.find((pm: WalletMethod) => pm.id === selectedStoryLink.wallet_method_id)?.platform || 'default'} 
+                          className="w-4 h-4 sm:w-5 sm:h-5 text-white" 
+                        />
+                        <span className="text-white font-semibold text-xs sm:text-sm">Support</span>
+                      </div>
+                      {/* Enhanced shimmer effect */}
+                      <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-1000" />
+                    </button>
+                  )}
+                  
+                  {/* Follow Button - Longer width, emphasized for social focus */}
                   <button
-                    onClick={() => handlePaymentClick(selectedStoryLink)}
-                    className={`w-full py-3 px-4 rounded-xl bg-gradient-to-r ${themeStyles.accent} text-white font-medium hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2`}
+                    onClick={() => window.open(selectedStoryLink.url, '_blank', 'noopener,noreferrer')}
+                    className="flex-1 group relative overflow-hidden bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 hover:border-white/40 rounded-xl px-6 py-4 transition-all duration-300 hover:scale-[1.02]"
                   >
-                    <DollarSign className="w-4 h-4" />
-                    Support Me
+                    <div className="flex items-center justify-center gap-2.5">
+                      <SocialIcon platform={selectedStoryLink.platform} className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+                      <span className="text-white font-semibold text-sm sm:text-base">Follow</span>
+                    </div>
+                    <div className={`absolute inset-0 bg-gradient-to-r ${themeStyles.accent} opacity-0 group-hover:opacity-15 transition-opacity rounded-xl`} />
                   </button>
                 </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-4 border-t border-gray-800">
-                <button
-                  onClick={() => window.open(selectedStoryLink.url, '_blank', 'noopener,noreferrer')}
-                  className="flex-1 py-3 px-4 rounded-xl border border-gray-600 text-gray-300 hover:text-white hover:border-gray-500 transition-all duration-300 flex items-center justify-center gap-2"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Go to {selectedStoryLink.platform}
-                </button>
-                <button
-                  onClick={closeStoryModal}
-                  className="px-6 py-3 rounded-xl bg-gray-800 text-gray-300 hover:text-white hover:bg-gray-700 transition-all duration-300"
-                >
-                  Close
-                </button>
               </div>
             </div>
           </div>

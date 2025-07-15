@@ -77,7 +77,7 @@ export interface Analytics {
   id: string
   user_id: string
   event_type: 'profile_view' | 'payment_click' | 'qr_scan' | 'tip_received'
-  payment_method_id?: string
+  wallet_method_id?: string
   qr_code_id?: string
   amount?: number
   metadata?: Record<string, any>

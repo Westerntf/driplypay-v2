@@ -16,7 +16,7 @@ import { getThemeStyles } from '@/components/profile/public/theme-utils'
 import { SocialIcon, PaymentIcon, ExternalLinkIcon, UserIcon, EditIcon, CreditCardIcon, SettingsIcon } from '@/components/icons'
 import {
   EditableSocialLinks,
-  EditablePaymentMethods,
+  EditableWalletMethods,
   EditableGoals,
   EditableThemeSelector,
   EditableQRGenerator,
@@ -53,12 +53,12 @@ interface Profile {
   location?: string
   theme: string
   is_verified?: boolean
-  payment_methods?: any[]
+  wallet_methods?: any[]
   social_links?: any[]
   goals?: any[]
   // Section visibility controls
   show_social_links?: boolean
-  show_payment_methods?: boolean
+  show_wallet_methods?: boolean
   show_goals?: boolean
 }
 
@@ -85,23 +85,23 @@ export default function EditablePublicProfile({ profile, userId, onProfileUpdate
   const [showImageModal, setShowImageModal] = useState<'avatar' | 'banner' | null>(null)
   const [showTutorial, setShowTutorial] = useState(false)
   const [showSocialLinks, setShowSocialLinks] = useState(profile.show_social_links ?? true)
-  const [showPaymentMethods, setShowPaymentMethods] = useState(profile.show_payment_methods ?? true)
+  const [showWalletMethods, setShowWalletMethods] = useState(profile.show_wallet_methods ?? true)
   const [showGoals, setShowGoals] = useState(profile.show_goals ?? true)
   const themeStyles = getThemeStyles(profile.theme)
 
   // Sync local state with profile changes
   useEffect(() => {
     setShowSocialLinks(profile.show_social_links ?? true)
-    setShowPaymentMethods(profile.show_payment_methods ?? true)
+    setShowWalletMethods(profile.show_wallet_methods ?? true)
     setShowGoals(profile.show_goals ?? true)
-  }, [profile.show_social_links, profile.show_payment_methods, profile.show_goals])
+  }, [profile.show_social_links, profile.show_wallet_methods, profile.show_goals])
 
   // Check if profile is empty to show tutorial
   const isEmptyProfile = !profile.display_name && 
                         !profile.bio && 
                         !profile.avatar_url && 
                         (!profile.social_links || profile.social_links.length === 0) &&
-                        (!profile.payment_methods || profile.payment_methods.length === 0) &&
+                        (!profile.wallet_methods || profile.wallet_methods.length === 0) &&
                         (!profile.goals || profile.goals.length === 0)
 
   useEffect(() => {
@@ -111,12 +111,12 @@ export default function EditablePublicProfile({ profile, userId, onProfileUpdate
   }, [isEmptyProfile])
 
   // Handle section visibility toggles
-  const handleToggleVisibility = async (section: 'social_links' | 'payment_methods' | 'goals', newValue: boolean) => {
+  const handleToggleVisibility = async (section: 'social_links' | 'wallet_methods' | 'goals', newValue: boolean) => {
     // Update local state immediately for responsive UI
     if (section === 'social_links') {
       setShowSocialLinks(newValue)
-    } else if (section === 'payment_methods') {
-      setShowPaymentMethods(newValue)
+    } else if (section === 'wallet_methods') {
+      setShowWalletMethods(newValue)
     } else if (section === 'goals') {
       setShowGoals(newValue)
     }
@@ -541,17 +541,16 @@ export default function EditablePublicProfile({ profile, userId, onProfileUpdate
               onUpdate={(links) => onProfileUpdate({ social_links: links })}
               isVisible={showSocialLinks}
               onToggleVisibility={() => handleToggleVisibility('social_links', !showSocialLinks)}
-              paymentMethods={profile.payment_methods || []}
+              walletMethods={profile.wallet_methods || []}
               userId={profile.user_id || userId}
             />
 
-            {/* Payment Methods - Support Me Second */}
-            <EditablePaymentMethods
-              paymentMethods={profile.payment_methods || []}
-              themeStyles={themeStyles}
-              onUpdate={(methods) => onProfileUpdate({ payment_methods: methods })}
-              isVisible={showPaymentMethods}
-              onToggleVisibility={() => handleToggleVisibility('payment_methods', !showPaymentMethods)}
+            {/* Wallet Methods - Support Me Second */}
+            <EditableWalletMethods
+              walletMethods={profile.wallet_methods || []}
+              onUpdate={(methods: any) => onProfileUpdate({ wallet_methods: methods })}
+              isVisible={showWalletMethods}
+              onToggleVisibility={() => handleToggleVisibility('wallet_methods', !showWalletMethods)}
             />
 
             {/* Goals - Third */}
@@ -561,7 +560,7 @@ export default function EditablePublicProfile({ profile, userId, onProfileUpdate
               onUpdate={(goals) => onProfileUpdate({ goals })}
               isVisible={showGoals}
               onToggleVisibility={() => handleToggleVisibility('goals', !showGoals)}
-              paymentMethods={profile.payment_methods || []}
+              walletMethods={profile.wallet_methods || []}
             />
           </div>
 
@@ -571,7 +570,7 @@ export default function EditablePublicProfile({ profile, userId, onProfileUpdate
             <div className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-xl p-6">
               <QRCodeManager
                 socialLinks={profile.social_links || []}
-                paymentMethods={profile.payment_methods || []}
+                walletMethods={profile.wallet_methods || []}
                 userId={userId}
                 profileUrl={`${window?.location?.origin}/${profile.username}`}
                 onQRUpdate={() => {

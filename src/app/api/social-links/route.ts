@@ -5,6 +5,9 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
 import { SocialLinksDatabase } from '@/lib/profile/database'
 import { createAdminClient } from '@/lib/supabase'
 

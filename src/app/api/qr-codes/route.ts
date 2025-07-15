@@ -6,6 +6,9 @@
 
 import { createClientWithRequest } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+
+// Force dynamic rendering for this API route
+export const dynamic = 'force-dynamic'
 import QRCode from 'qrcode'
 
 export async function GET(request: NextRequest) {

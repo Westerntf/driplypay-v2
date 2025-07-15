@@ -196,7 +196,10 @@ export class ProfileDatabase {
   // Check if username is available
   static async isUsernameAvailable(username: string, excludeUserId?: string) {
     try {
-      let query = supabase
+      // Use admin client for server-side operations (bypasses RLS)
+      const client = typeof window === 'undefined' ? supabaseAdmin : supabase
+      
+      let query = client
         .from('profiles')
         .select('id')
         .eq('username', username.toLowerCase())

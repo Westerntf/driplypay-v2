@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = request.nextUrl
     const userId = searchParams.get('userId')
 
     if (!userId) {
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = createClient()
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = request.nextUrl
     const storyId = searchParams.get('id')
 
     if (!storyId) {

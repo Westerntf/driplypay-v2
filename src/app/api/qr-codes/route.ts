@@ -180,7 +180,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = createClientWithRequest(request)
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = request.nextUrl
     const qrId = searchParams.get('id')
 
     if (!qrId) {

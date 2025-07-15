@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     const supabase = createClient()
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = request.nextUrl
     const qrCodeId = searchParams.get('qrCodeId')
 
     if (!qrCodeId) {

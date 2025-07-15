@@ -9,7 +9,7 @@ import { ProfileDatabase } from '@/lib/profile/database'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
+    const { searchParams } = request.nextUrl
     const username = searchParams.get('username')
     const excludeUserId = searchParams.get('excludeUserId')
 
